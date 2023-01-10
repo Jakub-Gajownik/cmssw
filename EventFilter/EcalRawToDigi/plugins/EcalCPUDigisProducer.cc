@@ -1,33 +1,23 @@
-#include <iostream>
 #include <utility>
 
-#include "CUDADataFormats/EcalDigi/interface/DigisCollection.h"
-#include "CondFormats/DataRecord/interface/EcalMappingElectronicsRcd.h"
-#include "CondFormats/EcalObjects/interface/ElectronicsMappingGPU.h"
 #include "DataFormats/EcalDetId/interface/EcalDetIdCollections.h"
-#include "DataFormats/EcalDigi/interface/EcalDataFrame.h"
+#include "DataFormats/EcalDigi/interface/EcalConstants.h"
 #include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
-#include "DataFormats/FEDRawData/interface/FEDRawDataCollection.h"
+#include "DataFormats/EcalDigi/interface/EcalDigiHostCollection.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/Framework/interface/stream/EDProducer.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "HeterogeneousCore/CUDACore/interface/ScopedContext.h"
-#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
-#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
+#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 
-#include "DeclsForKernels.h"
-#include "UnpackGPU.h"
-
-class EcalCPUDigisProducer : public edm::stream::EDProducer<edm::ExternalWork> {
+class EcalCPUDigisProducer : public edm::stream::EDProducer<> {
 public:
   explicit EcalCPUDigisProducer(edm::ParameterSet const& ps);
   ~EcalCPUDigisProducer() override = default;
   static void fillDescriptions(edm::ConfigurationDescriptions&);
 
 private:
-  void acquire(edm::Event const&, edm::EventSetup const&, edm::WaitingTaskWithArenaHolder) override;
   void produce(edm::Event&, edm::EventSetup const&) override;
 
   template <typename ProductType, typename... ARGS>
@@ -37,8 +27,8 @@ private:
   }
 
 private:
-  // input digi collections in GPU-friendly format
-  using InputProduct = cms::cuda::Product<ecal::DigisCollection<calo::common::DevStoragePolicy>>;
+  // input digi collections on host in SoA format
+  using InputProduct = ecal::DigiHostCollection;
   edm::EDGetTokenT<InputProduct> digisInEBToken_;
   edm::EDGetTokenT<InputProduct> digisInEEToken_;
 
@@ -73,17 +63,13 @@ private:
   // dummy TCC collections
   edm::EDPutTokenT<EcalTrigPrimDigiCollection> ecalTriggerPrimitivesToken_;
   edm::EDPutTokenT<EcalPSInputDigiCollection> ecalPseudoStripInputsToken_;
-
-  // FIXME better way to pass pointers from acquire to produce?
-  std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> idsebtmp, idseetmp;
-  std::vector<uint16_t, cms::cuda::HostAllocator<uint16_t>> dataebtmp, dataeetmp;
 };
 
 void EcalCPUDigisProducer::fillDescriptions(edm::ConfigurationDescriptions& confDesc) {
   edm::ParameterSetDescription desc;
 
-  desc.add<edm::InputTag>("digisInLabelEB", edm::InputTag{"ecalRawToDigiGPU", "ebDigis"});
-  desc.add<edm::InputTag>("digisInLabelEE", edm::InputTag{"ecalRawToDigiGPU", "eeDigis"});
+  desc.add<edm::InputTag>("digisInLabelEB", edm::InputTag{"ecalRawToDigiPortable", "ebDigis"});
+  desc.add<edm::InputTag>("digisInLabelEE", edm::InputTag{"ecalRawToDigiPortable", "eeDigis"});
   desc.add<std::string>("digisOutLabelEB", "ebDigis");
   desc.add<std::string>("digisOutLabelEE", "eeDigis");
 
@@ -94,9 +80,9 @@ void EcalCPUDigisProducer::fillDescriptions(edm::ConfigurationDescriptions& conf
 }
 
 EcalCPUDigisProducer::EcalCPUDigisProducer(const edm::ParameterSet& ps)
-    :  // input digi collections in GPU-friendly format
-      digisInEBToken_{consumes<InputProduct>(ps.getParameter<edm::InputTag>("digisInLabelEB"))},
-      digisInEEToken_{consumes<InputProduct>(ps.getParameter<edm::InputTag>("digisInLabelEE"))},
+    : // input digi collections on host in SoA format
+      digisInEBToken_{consumes(ps.getParameter<edm::InputTag>("digisInLabelEB"))},
+      digisInEEToken_{consumes(ps.getParameter<edm::InputTag>("digisInLabelEE"))},
 
       // output digi collections in legacy format
       digisOutEBToken_{produces<EBDigiCollection>(ps.getParameter<std::string>("digisOutLabelEB"))},
@@ -130,56 +116,35 @@ EcalCPUDigisProducer::EcalCPUDigisProducer(const edm::ParameterSet& ps)
       // dummy TCC collections
       ecalTriggerPrimitivesToken_{dummyProduces<EcalTrigPrimDigiCollection>("EcalTriggerPrimitives")},
       ecalPseudoStripInputsToken_{dummyProduces<EcalPSInputDigiCollection>("EcalPseudoStripInputs")}
-// constructor body
 {}
-
-void EcalCPUDigisProducer::acquire(edm::Event const& event,
-                                   edm::EventSetup const& setup,
-                                   edm::WaitingTaskWithArenaHolder taskHolder) {
-  // retrieve data/ctx
-  auto const& ebdigisProduct = event.get(digisInEBToken_);
-  auto const& eedigisProduct = event.get(digisInEEToken_);
-  cms::cuda::ScopedContextAcquire ctx{ebdigisProduct, std::move(taskHolder)};
-  auto const& ebdigis = ctx.get(ebdigisProduct);
-  auto const& eedigis = ctx.get(eedigisProduct);
-
-  // resize tmp buffers
-  dataebtmp.resize(ebdigis.size * EcalDataFrame::MAXSAMPLES);
-  dataeetmp.resize(eedigis.size * EcalDataFrame::MAXSAMPLES);
-  idsebtmp.resize(ebdigis.size);
-  idseetmp.resize(eedigis.size);
-
-  // enqeue transfers
-  cudaCheck(cudaMemcpyAsync(
-      dataebtmp.data(), ebdigis.data.get(), dataebtmp.size() * sizeof(uint16_t), cudaMemcpyDeviceToHost, ctx.stream()));
-  cudaCheck(cudaMemcpyAsync(
-      dataeetmp.data(), eedigis.data.get(), dataeetmp.size() * sizeof(uint16_t), cudaMemcpyDeviceToHost, ctx.stream()));
-  cudaCheck(cudaMemcpyAsync(
-      idsebtmp.data(), ebdigis.ids.get(), idsebtmp.size() * sizeof(uint32_t), cudaMemcpyDeviceToHost, ctx.stream()));
-  cudaCheck(cudaMemcpyAsync(
-      idseetmp.data(), eedigis.ids.get(), idseetmp.size() * sizeof(uint32_t), cudaMemcpyDeviceToHost, ctx.stream()));
-}
 
 void EcalCPUDigisProducer::produce(edm::Event& event, edm::EventSetup const& setup) {
   // output collections
   auto digisEB = std::make_unique<EBDigiCollection>();
   auto digisEE = std::make_unique<EEDigiCollection>();
-  digisEB->resize(idsebtmp.size());
-  digisEE->resize(idseetmp.size());
+
+  auto const& digisEBSoAHostColl = event.get(digisInEBToken_);
+  auto const& digisEESoAHostColl = event.get(digisInEEToken_);
+  auto& digisEBSoAView = digisEBSoAHostColl.view();
+  auto& digisEESoAView = digisEESoAHostColl.view();
+
+  std::cout << "digisEBSoAView.size(): " << digisEBSoAView.size() << std::endl;
+  std::cout << "digisEESoAView.size(): " << digisEESoAView.size() << std::endl;
+
+  digisEB->resize(digisEBSoAView.size());
+  digisEE->resize(digisEESoAView.size());
 
   // cast constness away
-  // use pointers to buffers instead of move operator= semantics
-  // cause we have different allocators in there...
   auto* dataEB = const_cast<uint16_t*>(digisEB->data().data());
   auto* dataEE = const_cast<uint16_t*>(digisEE->data().data());
   auto* idsEB = const_cast<uint32_t*>(digisEB->ids().data());
   auto* idsEE = const_cast<uint32_t*>(digisEE->ids().data());
 
   // copy data
-  std::memcpy(dataEB, dataebtmp.data(), dataebtmp.size() * sizeof(uint16_t));
-  std::memcpy(dataEE, dataeetmp.data(), dataeetmp.size() * sizeof(uint16_t));
-  std::memcpy(idsEB, idsebtmp.data(), idsebtmp.size() * sizeof(uint32_t));
-  std::memcpy(idsEE, idseetmp.data(), idseetmp.size() * sizeof(uint32_t));
+  std::memcpy(dataEB, digisEBSoAView.data()->data(), digisEBSoAView.size() * ecalPh1::sampleSize * sizeof(uint16_t));
+  std::memcpy(dataEE, digisEESoAView.data()->data(), digisEESoAView.size() * ecalPh1::sampleSize * sizeof(uint16_t));
+  std::memcpy(idsEB, digisEBSoAView.id(), digisEBSoAView.size() * sizeof(uint32_t));
+  std::memcpy(idsEE, digisEESoAView.id(), digisEESoAView.size() * sizeof(uint32_t));
 
   digisEB->sort();
   digisEE->sort();
