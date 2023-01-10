@@ -1,0 +1,15 @@
+<lcgdict>
+  <class name="ecal::DigiHostCollection"/>
+  <read
+    sourceClass="ecal::DigiHostCollection"
+    targetClass="ecal::DigiHostCollection"
+    version="[1-]"
+    source="ecal::EcalDigiSoA layout_;"
+    target="buffer_"
+    embed="false">
+  <![CDATA[
+    ecal::DigiHostCollection::ROOTReadStreamer(newObj, onfile.layout_);
+  ]]>
+  </read>
+  <class name="edm::Wrapper<ecal::DigiHostCollection>" splitLevel="0"/>
+</lcgdict>
