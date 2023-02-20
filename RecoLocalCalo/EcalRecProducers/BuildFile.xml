@@ -1,7 +1,9 @@
 <use name="clhep"/>
 <use name="cuda"/>
 <use name="FWCore/Framework"/>
-
+<use name="HeterogeneousCore/AlpakaCore"/>
+<use name="HeterogeneousCore/AlpakaInterface"/>
+<flags ALPAKA_BACKENDS="1"/>
 <export>
   <lib name="1"/>
 </export>
