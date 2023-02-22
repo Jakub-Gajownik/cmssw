@@ -135,4 +135,6 @@
 
    <class name="ecal::EcalDigiSoA"/>
    <class name="ecal::EcalDigiSoA::View"/>
+   <class name="ecal::EcalDigiPhase2SoA"/>
+   <class name="ecal::EcalDigiPhase2SoA::View"/>
 </lcgdict>

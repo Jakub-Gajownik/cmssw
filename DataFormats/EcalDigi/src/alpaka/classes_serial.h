@@ -2,3 +2,5 @@
 #include "DataFormats/Portable/interface/Product.h"
 #include "DataFormats/EcalDigi/interface/EcalDigiHostCollection.h"
 #include "DataFormats/EcalDigi/interface/EcalDigiSoA.h"
+#include "DataFormats/EcalDigi/interface/EcalDigiPhase2HostCollection.h"
+#include "DataFormats/EcalDigi/interface/EcalDigiPhase2SoA.h"
