@@ -3,7 +3,7 @@
 #include "DataFormats/EcalDigi/interface/alpaka/EcalDigiDeviceCollection.h"
 #include "DataFormats/FEDRawData/interface/FEDRawDataCollection.h"
 #include "EventFilter/EcalRawToDigi/interface/DCCRawDataDefinitions.h"
-#include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/Utilities/interface/ESGetToken.h"
@@ -95,7 +95,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     ecal::raw::InputDataDevice inputDevice;
     inputDevice.initialize(event.queue(), size, feds);
   
-    // output device
+    // output device collections
     OutputProduct digisDevEB{static_cast<int32_t>(config_.maxChannelsEB), event.queue()};
     OutputProduct digisDevEE{static_cast<int32_t>(config_.maxChannelsEE), event.queue()};
   
