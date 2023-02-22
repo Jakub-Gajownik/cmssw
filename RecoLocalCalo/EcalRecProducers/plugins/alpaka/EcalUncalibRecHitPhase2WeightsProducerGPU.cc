@@ -1,15 +1,10 @@
-#include "FWCore/Framework/interface/stream/EDProducer.h"
-#include "FWCore/Framework/interface/Event.h"
-#include "FWCore/Framework/interface/EventSetup.h"
-
-//new, possibly required
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Utilities/interface/StreamID.h"
 #include "FWCore/Utilities/interface/InputTag.h"
-#include "FWCore/Utilities/interface/EDGetToken.h" //alpaka one needed maybe??
+#include "FWCore/Utilities/interface/EDGetToken.h"
 
 
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
@@ -17,7 +12,7 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/EventSetup.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/EDPutToken.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h" 
-#include "HeterogeneousCore/AlpakaCore/interface/MakerMacros.h"
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/MakerMacros.h"
 
 
 #include "DataFormats/EcalDigi/interface/EcalDataFrame_Ph2.h"
@@ -29,7 +24,6 @@
 #include "DataFormats/Portable/interface/Product.h" 
 
 #include "EcalUncalibRecHitPhase2WeightsAlgoGPU.h"
-#include "DeclsForKernelsPhase2.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE{
   class EcalUncalibRecHitPhase2WeightsProducerGPU : public stream::EDProducer<> {
@@ -37,10 +31,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
     explicit EcalUncalibRecHitPhase2WeightsProducerGPU(edm::ParameterSet const &ps);
     ~EcalUncalibRecHitPhase2WeightsProducerGPU() override = default;
     static void fillDescriptions(edm::ConfigurationDescriptions &);
-  
-  private:
+
     void produce(device::Event &, device::EventSetup const &) override;
- 
+
   private:
     cms::alpakatools::host_buffer<double[]> weights_;   
     
@@ -96,9 +89,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
   }
 
   void EcalUncalibRecHitPhase2WeightsProducerGPU::produce(device::Event &event, const device::EventSetup &setup) {
-    
-    //implememnt check if size>0, if not don't run algo
-    
+
     // device collection of digis products
     auto const &digis = event.get(digisToken_);
 
@@ -109,17 +100,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
     OutputProduct recHits{static_cast<int32_t>(size), event.queue()};
   
     // do not run the algo if there are no digis
-    /*if (size > 0) {
-      auto weights_d = cms::cuda::make_device_unique<double[]>(EcalDataFrame_Ph2::MAXSAMPLES, ctx.stream()); //see stream producer deviceProduct
-      
-      cudaCheck(cudaMemcpyAsync(weights_d.get(),                                             
-                                weights_.data(),
-                                EcalDataFrame_Ph2::MAXSAMPLES * sizeof(double),
-                                cudaMemcpyHostToDevice,
-                                ctx.stream()));
-    }*/
+    if (size > 0) {
     //launch the asynchronous work
     ecal::weights::phase2Weights(digis, recHits, weights_, event.queue());
+    }
     // put into the event
     event.emplace(recHitsToken_, std::move(recHits));
   }

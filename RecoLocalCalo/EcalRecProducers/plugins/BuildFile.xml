@@ -21,7 +21,7 @@
 <else/>
   <set name="cuda_src" value=""/>
 </iftool>
-<library file="*.cc" name="RecoLocalCaloEcalRecProducersPlugins">
+<library file="*.cc ${cuda_src}" name="RecoLocalCaloEcalRecProducersPlugins">
   <flags EDM_PLUGIN="1"/>
 </library>
 <library file="alpaka/*.cc" name="RecoLocalCaloEcalRecProducersPluginsPortable">
