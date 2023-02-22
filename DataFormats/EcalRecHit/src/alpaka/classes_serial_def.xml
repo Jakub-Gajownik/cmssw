@@ -1,0 +1,15 @@
+<lcgdict>
+  <class name="ecal::EcalUncalibratedRecHitHostCollection"/>
+  <read
+    sourceClass="ecal::EcalUncalibratedRecHitHostCollection"
+    targetClass="ecal::EcalUncalibratedRecHitHostCollection"
+    version="[1-]"
+    source="ecal::EcalUncalibratedRecHitSoA layout_;"
+    target="buffer_"
+    embed="false">
+  <![CDATA[
+    ecal::EcalUncalibratedRecHitHostCollection::ROOTReadStreamer(newObj, onfile.layout_);
+  ]]>
+  </read>
+  <class name="edm::Wrapper<ecal::EcalUncalibratedRecHitHostCollection>" splitLevel="0"/>
+</lcgdict>

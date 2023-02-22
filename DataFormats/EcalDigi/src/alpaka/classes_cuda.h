@@ -3,3 +3,5 @@
 #include "DataFormats/Portable/interface/Product.h"
 #include "DataFormats/EcalDigi/interface/EcalDigiSoA.h"
 #include "DataFormats/EcalDigi/interface/alpaka/EcalDigiDeviceCollection.h"
+#include "DataFormats/EcalDigi/interface/EcalDigiPhase2SoA.h"
+#include "DataFormats/EcalDigi/interface/alpaka/EcalDigiPhase2DeviceCollection.h"
