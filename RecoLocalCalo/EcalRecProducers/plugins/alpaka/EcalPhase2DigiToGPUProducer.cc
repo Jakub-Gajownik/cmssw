@@ -1,91 +1,76 @@
-#include "FWCore/Framework/interface/stream/EDProducer.h"
-#include "FWCore/Framework/interface/Event.h"
-#include "FWCore/Framework/interface/EventSetup.h"
-#include "FWCore/Framework/interface/MakerMacros.h"
-
-#include "HeterogeneousCore/CUDACore/interface/ScopedContext.h"
-#include "HeterogeneousCore/CUDAUtilities/interface/host_unique_ptr.h"
-#include "CUDADataFormats/EcalDigi/interface/DigisCollection.h"
-
 #include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
-#include "DataFormats/EcalDigi/interface/EcalDataFrame_Ph2.h"
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h" 
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/Event.h"
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/EventSetup.h"
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/MakerMacros.h"
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/EDPutToken.h"
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/ESGetToken.h"
+#include "HeterogeneousCore/AlpakaInterface/interface/config.h"
+#include "DataFormats/EcalDigi/interface/alpaka/EcalDigiPhase2DeviceCollection.h" 
+#include "DataFormats/EcalDigi/interface/EcalDigiPhase2HostCollection.h"
 
-#include "DeclsForKernelsPhase2.h"
 
-class EcalPhase2DigiToGPUProducer : public edm::stream::EDProducer<> {
-public:
-  explicit EcalPhase2DigiToGPUProducer(const edm::ParameterSet& ps);
-  ~EcalPhase2DigiToGPUProducer() override = default;
-  static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
-  void produce(edm::Event& evt, edm::EventSetup const& setup) override;
 
-private:
-  const edm::EDGetTokenT<EBDigiCollectionPh2> digiCollectionToken_;
-  const edm::EDPutTokenT<cms::cuda::Product<ecal::DigisCollection<calo::common::DevStoragePolicy>>>
-      digisCollectionToken_;
-};
+namespace ALPAKA_ACCELERATOR_NAMESPACE{
+  class EcalPhase2DigiToGPUProducer : public stream::EDProducer<> {
+  public:
+    explicit EcalPhase2DigiToGPUProducer(edm::ParameterSet const &ps);
+    ~EcalPhase2DigiToGPUProducer() override = default;
+    static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
-void EcalPhase2DigiToGPUProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
-  edm::ParameterSetDescription desc;
+    void produce(device::Event &event, device::EventSetup const &setup) override;
 
-  desc.add<edm::InputTag>("BarrelDigis", edm::InputTag("simEcalUnsuppressedDigis", ""));
-  desc.add<std::string>("digisLabelEB", "ebDigis");
+  private:
+    const device::EDGetToken<EBDigiCollectionPh2> inputDigiToken_;
+    const device::EDPutToken<ecal::DigiPhase2DeviceCollection> outputDigiDevToken_;
+  };
 
-  descriptions.addWithDefaultLabel(desc);
+  void EcalPhase2DigiToGPUProducer::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
+    edm::ParameterSetDescription desc;
+
+    desc.add<edm::InputTag>("BarrelDigis", edm::InputTag("simEcalUnsuppressedDigis", ""));
+    desc.add<std::string>("digisLabelEB", "ebDigis");
+
+    descriptions.addWithDefaultLabel(desc);
 }
 
-EcalPhase2DigiToGPUProducer::EcalPhase2DigiToGPUProducer(const edm::ParameterSet& ps)
-    : digiCollectionToken_(consumes<EBDigiCollectionPh2>(ps.getParameter<edm::InputTag>("BarrelDigis"))),
-      digisCollectionToken_(produces<cms::cuda::Product<ecal::DigisCollection<calo::common::DevStoragePolicy>>>(
-          ps.getParameter<std::string>("digisLabelEB"))) {}
+  EcalPhase2DigiToGPUProducer::EcalPhase2DigiToGPUProducer(edm::ParameterSet const &ps)
+      : inputDigiToken_(consumes(ps.getParameter<edm::InputTag>("BarrelDigis"))),
+        outputDigiDevToken_(produces(ps.getParameter<std::string>("digisLabelEB"))) {}
 
-void EcalPhase2DigiToGPUProducer::produce(edm::Event& event, edm::EventSetup const& setup) {
-  cms::cuda::ScopedContextProduce ctx{event.streamID()};
-
+  void EcalPhase2DigiToGPUProducer::produce(device::Event &event, device::EventSetup const &setup) {
+    
   //input data from event
-  const auto& pdigis = event.get(digiCollectionToken_);
+    const auto &inputDigis = event.get(inputDigiToken_);
 
-  const uint32_t size = pdigis.size();
+    const uint32_t size = inputDigis.size();
 
-  ecal::DigisCollection<::calo::common::DevStoragePolicy> digis;
-  digis.size = size;
-
-  //allocate device pointers for output
-  digis.ids = cms::cuda::make_device_unique<uint32_t[]>(size, ctx.stream());
-  digis.data = cms::cuda::make_device_unique<uint16_t[]>(size * EcalDataFrame_Ph2::MAXSAMPLES, ctx.stream());
-
-  //allocate host pointers for holding product data and id vectors
-  auto idstmp = cms::cuda::make_host_unique<uint32_t[]>(size, ctx.stream());
-  auto datatmp = cms::cuda::make_host_unique<uint16_t[]>(size * EcalDataFrame_Ph2::MAXSAMPLES, ctx.stream());
+    //create host and device collections of desired size
+    ecal::DigiPhase2DeviceCollection DigisDevColl{static_cast<int32_t>(size), event.queue()};
+    ecal::DigiPhase2HostCollection DigisHostColl{static_cast<int32_t>(size), event.queue()};  
 
   //iterate over digis
-  uint32_t i = 0;
-  for (const auto& pdigi : pdigis) {
-    const int nSamples = pdigi.size();
-    //assign id to output vector
-    idstmp.get()[i] = pdigi.id();
+    uint32_t i = 0;
+    for (const auto& inputDigi : inputDigis) {
+      const int nSamples = inputDigi.size();
+    //assign id to host collection
+      DigisHostColl.view().id()[i] = inputDigi.id();
     //iterate over sample in digi
-    for (int sample = 0; sample < nSamples; ++sample) {
+      for (int sample = 0; sample < nSamples; ++sample) {
       //get samples from input digi
-      EcalLiteDTUSample thisSample = pdigi[sample];
-      //assign adc data to output
-      datatmp.get()[i * nSamples + sample] = thisSample.raw();
+        EcalLiteDTUSample thisSample = inputDigi[sample];
+      //assign adc data to host collection
+        DigisHostColl.view().data()[i * nSamples + sample][i] = thisSample.raw();
+      }
+      ++i;
     }
-    ++i;
+
+  //copy collection from host to device
+    alpaka::memcpy(event.queue(), DigisDevColl.buffer(), DigisHostColl.buffer());
+
+  //emplace device collection in the event
+    event.emplace(outputDigiDevToken_, std::move(DigisDevColl));
   }
-
-  //copy output vectors into member variable device pointers for the output struct
-  cudaCheck(
-      cudaMemcpyAsync(digis.ids.get(), idstmp.get(), size * sizeof(uint32_t), cudaMemcpyHostToDevice, ctx.stream()));
-  cudaCheck(cudaMemcpyAsync(digis.data.get(),
-                            datatmp.get(),
-                            size * EcalDataFrame_Ph2::MAXSAMPLES * sizeof(uint16_t),
-                            cudaMemcpyHostToDevice,
-                            ctx.stream()));
-
-  //emplace output in the context
-  ctx.emplace(event, digisCollectionToken_, std::move(digis));
 }
-
-DEFINE_FWK_MODULE(EcalPhase2DigiToGPUProducer);
+DEFINE_FWK_ALPAKA_MODULE(EcalPhase2DigiToGPUProducer);
