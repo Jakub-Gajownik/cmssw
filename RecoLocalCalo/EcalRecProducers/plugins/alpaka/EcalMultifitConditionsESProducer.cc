@@ -21,7 +21,11 @@
 #include "CondFormats/EcalObjects/interface/EcalTimeOffsetConstant.h"
 
 #include "CondFormats/EcalObjects/interface/alpaka/EcalMultifitConditionsPortable.h"
+#include "CondFormats/EcalObjects/interface/EcalMultifitConditionsSoA.h"
 #include "CondFormats/DataRecord/interface/EcalMultifitConditionsRcd.h"
+
+#include "DataFormats/EcalDigi/interface/EcalConstants.h"
+#include "CondFormats/EcalObjects/interface/EcalPulseShapes.h"
 
 #include "DataFormats/EcalDetId/interface/EcalElectronicsId.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/ESGetToken.h"
@@ -54,7 +58,132 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
     std::unique_ptr<EcalMultifitConditionsPortableHost> produce(EcalMultifitConditionsRcd const& iRecord) {
       //auto const& mapping = iRecord.get(token_);
-      auto product = std::make_unique<EcalMultifitConditionsPortableHost>(10, cms::alpakatools::host());
+      auto const & pedestalsData = iRecord.get(pedestalsToken_);
+      auto const & gainRatiosData = iRecord.get(gainRatiosToken_);
+      auto const & pulseShapesData = iRecord.get(pulseShapesToken_);
+      auto const & pulseCovariancesData = iRecord.get(pulseCovariancesToken_);
+      auto const & samplesCorrelationData = iRecord.get(samplesCorrelationToken_);
+      auto const & timeBiasCorrectionsData = iRecord.get(timeBiasCorrectionsToken_);
+      auto const & timeCalibConstantsData = iRecord.get(timeCalibConstantsToken_);
+      auto const & sampleMaskData = iRecord.get(sampleMaskToken_);
+      auto const & timeOffsetConstantData = iRecord.get(timeOffsetConstantToken_);
+
+      size_t numberOfXtals = pedestalsData.size(); 
+      
+      auto product = std::make_unique<EcalMultifitConditionsPortableHost>(numberOfXtals,
+                                                                          cms::alpakatools::host());
+      auto view = product->view();
+
+      // Filling pedestals
+      const auto barrelSize = pedestalsData.barrelItems().size();
+      const auto endcapSize = pedestalsData.endcapItems().size();
+       
+      auto const& pedestalsEB = pedestalsData.barrelItems();
+      auto const& pedestalsEE = pedestalsData.endcapItems();
+      auto const& gainRatiosEB = gainRatiosData.barrelItems();
+      auto const& gainRatiosEE = gainRatiosData.endcapItems();
+      auto const & pulseShapesEB = pulseShapesData.barrelItems();
+      auto const & pulseShapesEE = pulseShapesData.endcapItems();
+      auto const & pulseCovariancesEB = pulseCovariancesData.barrelItems();
+      auto const & pulseCovariancesEE = pulseCovariancesData.endcapItems();
+      auto const & timeCalibConstantsEB = timeCalibConstantsData.barrelItems();
+      auto const & timeCalibConstantsEE = timeCalibConstantsData.endcapItems();
+            
+      for (unsigned int i = 0; i < barrelSize; i++) {
+        auto vi = view[i];
+        
+        vi.pedestals_mean_x12() = pedestalsEB[i].mean_x12;
+        vi.pedestals_rms_x12() = pedestalsEB[i].rms_x12;
+        vi.pedestals_mean_x6() = pedestalsEB[i].mean_x6;
+        vi.pedestals_rms_x6() = pedestalsEB[i].rms_x6;
+        vi.pedestals_mean_x1() = pedestalsEB[i].mean_x1;
+        vi.pedestals_rms_x1() = pedestalsEB[i].rms_x1;
+
+        vi.gain12Over6() = gainRatiosEB[i].gain12Over6();
+        vi.gain6Over1() = gainRatiosEB[i].gain6Over1();
+
+        vi.timeCalibConstants() = timeCalibConstantsEB[i];
+
+        std::memcpy(vi.pulseShapes().data(), pulseShapesEB[i].pdfval,
+                    sizeof(float)*EcalPulseShape::TEMPLATESAMPLES );               
+        for (unsigned int j = 0; j<EcalPulseShape::TEMPLATESAMPLES; j++){
+          for (unsigned int k = 0; j<EcalPulseShape::TEMPLATESAMPLES; k++){
+            vi.pulseCovariance()(j,k) = pulseCovariancesEB[i].val(j,k);
+          }
+        }
+      } // end Barrel loop
+      for (unsigned int i = 0; i < endcapSize; i++) {
+        auto vi = view[barrelSize + i];
+        
+        vi.pedestals_mean_x12() = pedestalsEE[i].mean_x12;
+        vi.pedestals_rms_x12() = pedestalsEE[i].rms_x12;
+        vi.pedestals_mean_x6() = pedestalsEE[i].mean_x6;
+        vi.pedestals_rms_x6() = pedestalsEE[i].rms_x6;
+        vi.pedestals_mean_x1() = pedestalsEE[i].mean_x1;
+        vi.pedestals_rms_x1() = pedestalsEE[i].rms_x1;
+
+        vi.gain12Over6() = gainRatiosEE[i].gain12Over6();
+        vi.gain6Over1() = gainRatiosEE[i].gain6Over1();
+
+        vi.timeCalibConstants() = timeCalibConstantsEE[i];
+
+        std::memcpy(vi.pulseShapes().data(), pulseShapesEE[i].pdfval,
+                    sizeof(float)*EcalPulseShape::TEMPLATESAMPLES );
+
+        for (unsigned int j = 0; j<EcalPulseShape::TEMPLATESAMPLES; j++){
+          for (unsigned int k = 0; j<EcalPulseShape::TEMPLATESAMPLES; k++){
+            vi.pulseCovariance()(j,k) = pulseCovariancesEE[i].val(j,k);
+          }
+        }
+      } // end Endcap loop
+
+      // === Scalar data (not by xtal)
+      //TimeBiasCorrection
+      std::memcpy(view.timeBiasCorrections_amplitude_EB().data(),
+                  timeBiasCorrectionsData.EBTimeCorrAmplitudeBins.data(),
+                  sizeof(float)*N_TIMEBIASCORRECTIONS_BINS_EB);
+      std::memcpy(view.timeBiasCorrections_shift_EB().data(),
+                  timeBiasCorrectionsData.EBTimeCorrShiftBins.data(),
+                  sizeof(float)*N_TIMEBIASCORRECTIONS_BINS_EB);
+      
+      std::memcpy(view.timeBiasCorrections_amplitude_EE().data(),
+                  timeBiasCorrectionsData.EETimeCorrAmplitudeBins.data(),
+                  sizeof(float)*N_TIMEBIASCORRECTIONS_BINS_EE);
+      std::memcpy(view.timeBiasCorrections_shift_EE().data(),
+                  timeBiasCorrectionsData.EETimeCorrShiftBins.data(),
+                  sizeof(float)*N_TIMEBIASCORRECTIONS_BINS_EE);
+
+      
+      // SampleCorrelation
+      std::memcpy(view.sampleCorrelation_EB_G12().data(),
+                  samplesCorrelationData.EBG12SamplesCorrelation.data(),
+                  sizeof(double)*ecalPh1::sampleSize);
+      std::memcpy(view.sampleCorrelation_EB_G6().data(),
+                  samplesCorrelationData.EBG6SamplesCorrelation.data(),
+                  sizeof(double)*ecalPh1::sampleSize);
+      std::memcpy(view.sampleCorrelation_EB_G1().data(),
+                  samplesCorrelationData.EBG1SamplesCorrelation.data(),
+                  sizeof(double)*ecalPh1::sampleSize);
+      
+      std::memcpy(view.sampleCorrelation_EE_G12().data(),
+                  samplesCorrelationData.EEG12SamplesCorrelation.data(),
+                  sizeof(double)*ecalPh1::sampleSize);
+      std::memcpy(view.sampleCorrelation_EE_G6().data(),
+                  samplesCorrelationData.EBG6SamplesCorrelation.data(),
+                  sizeof(double)*ecalPh1::sampleSize);
+      std::memcpy(view.sampleCorrelation_EE_G1().data(),
+                  samplesCorrelationData.EEG1SamplesCorrelation.data(),
+                  sizeof(double)*ecalPh1::sampleSize);
+
+      
+      // Sample masks
+      view.sampleMask_EB() = sampleMaskData.getEcalSampleMaskRecordEB();
+      view.sampleMask_EE() = sampleMaskData.getEcalSampleMaskRecordEE();
+
+      // Time offsets
+      view.timeOffset_EB() = timeOffsetConstantData.getEBValue();
+      view.timeOffset_EE() = timeOffsetConstantData.getEEValue();
+      
       return product;
     }
 
