@@ -13,3 +13,5 @@
 #include "DataFormats/Common/interface/DetSet.h"
 #include "DataFormats/Common/interface/DetSetVector.h"
 #include "DataFormats/EcalRecHit/interface/EcalRecHitComparison.h"
+
+#include "DataFormats/EcalRecHit/interface/EcalUncalibratedRecHitSoA.h"

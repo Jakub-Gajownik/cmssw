@@ -1,0 +1,5 @@
+#include "DataFormats/Common/interface/DeviceProduct.h"
+#include "DataFormats/Common/interface/Wrapper.h"
+#include "DataFormats/Portable/interface/Product.h"
+#include "DataFormats/EcalDigi/interface/EcalDigiPhase2SoA.h"
+#include "DataFormats/EcalDigi/interface/alpaka/EcalDigiPhase2DeviceCollection.h"

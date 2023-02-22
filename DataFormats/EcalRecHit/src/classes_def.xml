@@ -39,4 +39,7 @@
   <class name="edm::Wrapper<edm::DetSetVector<EcalRecHit> >"/>
   <class name="edm::Wrapper<std::vector<std::vector<edm::DetSet<EcalRecHit> > > >"/>
 
+  <class name="ecal::EcalUncalibratedRecHitSoA"/>
+  <class name="ecal::EcalUncalibratedRecHitSoA::View"/>
+
 </lcgdict>
