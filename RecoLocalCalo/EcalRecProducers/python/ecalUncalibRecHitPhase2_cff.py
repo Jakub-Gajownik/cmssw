@@ -33,9 +33,9 @@ ecalUncalibRecHitSoA = _ecalCPUUncalibRecHitProducer.clone(
 )
 
 
-from RecoLocalCalo.EcalRecProducers.ecalUncalibRecHitConvertGPU2CPUFormat_cfi import ecalUncalibRecHitConvertGPU2CPUFormat as _ecalUncalibRecHitConvertGPU2CPUFormat
+from RecoLocalCalo.EcalRecProducers.ecalUncalibRecHitConvertPortable2CPUFormat_cfi import ecalUncalibRecHitConvertPortable2CPUFormat as _ecalUncalibRecHitConvertPortable2CPUFormat
 gpu.toModify(ecalUncalibRecHitPhase2,
-    cuda = _ecalUncalibRecHitConvertGPU2CPUFormat.clone(
+    cuda = _ecalUncalibRecHitConvertPortable2CPUFormat.clone(
         isPhase2 = True,
         recHitsLabelGPUEB = ('ecalUncalibRecHitSoA', 'EcalUncalibRecHitsEB'),
         recHitsLabelGPUEE = None,  # remove unneeded Phase1 parameters

@@ -1,9 +1,13 @@
 #ifndef DataFormats_EcalRecHit_EcalUncalibratedRecHitSoA_h
 #define DataFormats_EcalRecHit_EcalUncalibratedRecHitSoA_h
                                                                                                                   
-#include "DataFormats/SoATemplate/interface/SoALayout.h"                                                          
+#include "DataFormats/SoATemplate/interface/SoALayout.h"
+#include <array>
+#include "DataFormats/EcalDigi/interface/EcalConstants.h"                                                          
                                                                                                               
 namespace ecal {
+
+  using ootAmpArray = std::array<float, ecalPh1::sampleSize>; //number of OOT amplitudes currently=number of samples, to be revised
                                                                                                                                                                      
   GENERATE_SOA_LAYOUT(EcalUncalibratedRecHitSoALayout,                                                                          
     SOA_COLUMN(uint32_t, id),
@@ -12,9 +16,11 @@ namespace ecal {
     SOA_COLUMN(float, amplitudeError),
     SOA_COLUMN(float, pedestal),
     SOA_COLUMN(float, jitter),
+    SOA_COLUMN(float, jitterError),
     SOA_COLUMN(float, chi2),
     SOA_COLUMN(uint32_t, flags),
-    SOA_COLUMN(uint32_t, aux)
+    SOA_COLUMN(uint32_t, aux),
+    SOA_COLUMN(ootAmpArray, outOfTimeAmplitudes)
   )
 
   using EcalUncalibratedRecHitSoA = EcalUncalibratedRecHitSoALayout<>;
