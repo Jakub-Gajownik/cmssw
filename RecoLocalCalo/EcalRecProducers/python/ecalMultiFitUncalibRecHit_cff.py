@@ -13,53 +13,35 @@ ecalMultiFitUncalibRecHitTask = cms.Task(
   ecalMultiFitUncalibRecHit
 )
 
+from Configuration.StandardSequences.Accelerators_cff import *
+from HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi import ProcessAcceleratorAlpaka
+
 # ECAL conditions used by the multifit running on GPU
-from RecoLocalCalo.EcalRecProducers.ecalPedestalsGPUESProducer_cfi import ecalPedestalsGPUESProducer
-from RecoLocalCalo.EcalRecProducers.ecalGainRatiosGPUESProducer_cfi import ecalGainRatiosGPUESProducer
-from RecoLocalCalo.EcalRecProducers.ecalPulseShapesGPUESProducer_cfi import ecalPulseShapesGPUESProducer
-from RecoLocalCalo.EcalRecProducers.ecalPulseCovariancesGPUESProducer_cfi import ecalPulseCovariancesGPUESProducer
-from RecoLocalCalo.EcalRecProducers.ecalSamplesCorrelationGPUESProducer_cfi import ecalSamplesCorrelationGPUESProducer
-from RecoLocalCalo.EcalRecProducers.ecalTimeBiasCorrectionsGPUESProducer_cfi import ecalTimeBiasCorrectionsGPUESProducer
-from RecoLocalCalo.EcalRecProducers.ecalTimeCalibConstantsGPUESProducer_cfi import ecalTimeCalibConstantsGPUESProducer
+from RecoLocalCalo.EcalRecProducers.ecalMultifitConditionsPortableESProducer_cfi import ecalMultifitConditionsPortableESProducer
 from RecoLocalCalo.EcalRecProducers.ecalMultifitParametersGPUESProducer_cfi import ecalMultifitParametersGPUESProducer
 
 # ECAL multifit running on GPU
-from RecoLocalCalo.EcalRecProducers.ecalUncalibRecHitProducerGPU_cfi import ecalUncalibRecHitProducerGPU as _ecalUncalibRecHitProducerGPU
-ecalMultiFitUncalibRecHitGPU = _ecalUncalibRecHitProducerGPU.clone(
-  digisLabelEB = cms.InputTag('ecalDigisGPU', 'ebDigis'),
-  digisLabelEE = cms.InputTag('ecalDigisGPU', 'eeDigis'),
-)
-
-# copy the uncalibrated rechits from GPU to CPU
-from RecoLocalCalo.EcalRecProducers.ecalCPUUncalibRecHitProducer_cfi import ecalCPUUncalibRecHitProducer as _ecalCPUUncalibRecHitProducer
-ecalMultiFitUncalibRecHitSoA = _ecalCPUUncalibRecHitProducer.clone(
-  recHitsInLabelEB = cms.InputTag('ecalMultiFitUncalibRecHitGPU', 'EcalUncalibRecHitsEB'),
-  recHitsInLabelEE = cms.InputTag('ecalMultiFitUncalibRecHitGPU', 'EcalUncalibRecHitsEE'),
+from RecoLocalCalo.EcalRecProducers.ecalUncalibRecHitProducerPortable_cfi import ecalUncalibRecHitProducerPortable as _ecalUncalibRecHitProducerPortable
+ecalMultiFitUncalibRecHitPortable = _ecalUncalibRecHitProducerPortable.clone(
+  digisLabelEB = cms.InputTag('ecalDigisPortable', 'ebDigis'),
+  digisLabelEE = cms.InputTag('ecalDigisPortable', 'eeDigis'),
 )
 
 # convert the uncalibrated rechits from SoA to legacy format
-from RecoLocalCalo.EcalRecProducers.ecalUncalibRecHitConvertGPU2CPUFormat_cfi import ecalUncalibRecHitConvertGPU2CPUFormat as _ecalUncalibRecHitConvertGPU2CPUFormat
+from RecoLocalCalo.EcalRecProducers.ecalUncalibRecHitConvertPortable2CPUFormat_cfi import ecalUncalibRecHitConvertPortable2CPUFormat as _ecalUncalibRecHitConvertPortable2CPUFormat
 gpu.toModify(ecalMultiFitUncalibRecHit,
-  cuda = _ecalUncalibRecHitConvertGPU2CPUFormat.clone(
-    recHitsLabelGPUEB = cms.InputTag('ecalMultiFitUncalibRecHitSoA', 'EcalUncalibRecHitsEB'),
-    recHitsLabelGPUEE = cms.InputTag('ecalMultiFitUncalibRecHitSoA', 'EcalUncalibRecHitsEE'),
+  cuda = _ecalUncalibRecHitConvertPortable2CPUFormat.clone(
+    recHitsLabelGPUEB = cms.InputTag('ecalMultiFitUncalibRecHitPortable', 'EcalUncalibRecHitsEB'),
+    recHitsLabelGPUEE = cms.InputTag('ecalMultiFitUncalibRecHitPortable', 'EcalUncalibRecHitsEE'),
   )
 )
 
 gpu.toReplaceWith(ecalMultiFitUncalibRecHitTask, cms.Task(
   # ECAL conditions used by the multifit running on GPU
-  ecalPedestalsGPUESProducer,
-  ecalGainRatiosGPUESProducer,
-  ecalPulseShapesGPUESProducer,
-  ecalPulseCovariancesGPUESProducer,
-  ecalSamplesCorrelationGPUESProducer,
-  ecalTimeBiasCorrectionsGPUESProducer,
-  ecalTimeCalibConstantsGPUESProducer,
+  ecalMultifitConditionsPortableESProducer,
   ecalMultifitParametersGPUESProducer,
-  # ECAL multifit running on GPU
-  ecalMultiFitUncalibRecHitGPU,
-  # copy the uncalibrated rechits from GPU to CPU
-  ecalMultiFitUncalibRecHitSoA,
+  # ECAL multifit running on device
+  ecalMultiFitUncalibRecHitPortable,
   # ECAL multifit running on CPU, or convert the uncalibrated rechits from SoA to legacy format
   ecalMultiFitUncalibRecHit,
 ))
