@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "CondFormats/EcalObjects/interface/alpaka/EcalMultifitConditionsPortable.h"
 #include "DataFormats/EcalDigi/interface/alpaka/EcalDigiDeviceCollection.h"
 #include "DataFormats/EcalRecHit/interface/alpaka/EcalUncalibratedRecHitDeviceCollection.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
@@ -18,6 +19,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                       DigiDeviceCollection const&,
                       UncalibratedRecHitDeviceCollection&,
                       UncalibratedRecHitDeviceCollection&,
+                      EcalMultifitConditionsPortableDevice const&,
                       //ConditionsProducts const&,
                       ConfigurationParameters const&,
                       Queue&);

@@ -1,4 +1,10 @@
+// Check that ALPAKA_HOST_ONLY is not defined during device compilation:
+#ifdef ALPAKA_HOST_ONLY
+#error ALPAKA_HOST_ONLY defined in device compilation
+#endif
+
 #include <limits>
+#include <alpaka/alpaka.hpp>
 
 //#include "CondFormats/EcalObjects/interface/EcalMGPAGainRatio.h"
 //#include "CondFormats/EcalObjects/interface/EcalPedestals.h"
@@ -26,13 +32,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   
       using namespace cms::alpakatools;
 
-      void entryPoint(DigiDeviceCollection const&,
-                      DigiDeviceCollection const&,
-                      UncalibratedRecHitDeviceCollection&,
-                      UncalibratedRecHitDeviceCollection&,
+      void entryPoint(DigiDeviceCollection const& digisDevEB,
+                      DigiDeviceCollection const& digisDevEE,
+                      UncalibratedRecHitDeviceCollection& uncalibRecHitsDevEB,
+                      UncalibratedRecHitDeviceCollection& uncalibRecHitsDevEE,
+                      EcalMultifitConditionsPortableDevice const& conditionsDev,
                       //ConditionsProducts const&,
-                      ConfigurationParameters const&,
-                      Queue&) {
+                      ConfigurationParameters const& configParams,
+                      Queue& queue) {
   
       //void entryPoint(EventInputDataGPU const& eventInputGPU,
       //                EventOutputDataGPU& eventOutputGPU,
@@ -56,9 +63,19 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         //
         unsigned int nchannels_per_block = 32;
         unsigned int threads_1d = 10 * nchannels_per_block;
-        unsigned int blocks_1d = threads_1d > 10 * totalChannels ? 1 : (totalChannels * 10 + threads_1d - 1) / threads_1d;
-      //  int shared_bytes = nchannels_per_block * EcalDataFrame::MAXSAMPLES *
-      //                     (sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(char) + sizeof(bool));
+//        unsigned int blocks_1d = threads_1d > 10 * totalChannels ? 1 : (totalChannels * 10 + threads_1d - 1) / threads_1d;
+//      //  int shared_bytes = nchannels_per_block * EcalDataFrame::MAXSAMPLES *
+//      //                     (sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(char) + sizeof(bool));
+//        auto workDiv = cms::alpakatools::make_workdiv<Acc1D>(blocks_1d, threads_1d);
+//        alpaka::exec<Acc1D>(queue,
+//		            workDiv,
+//			    kernel_prep_1d_and_initialize{},
+//                            digisDevEB.const_view(),
+//                            digisDevEE.const_view(),
+//                            uncalibRecHitsDevEB.view(),
+//                            uncalibRecHitsDevEE.view(),
+//                            conditionsDev.const_view(),
+//                            totalChannels);
       //  kernel_prep_1d_and_initialize<<<blocks_1d, threads_1d, shared_bytes, cudaStream>>>(
       //      conditions.pulseShapes.values,
       //      eventInputGPU.ebDigis.data.get(),
