@@ -107,7 +107,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         std::memcpy(vi.pulseShapes().data(), pulseShapesEB[i].pdfval,
                     sizeof(float)*EcalPulseShape::TEMPLATESAMPLES );               
         for (unsigned int j = 0; j<EcalPulseShape::TEMPLATESAMPLES; j++){
-          for (unsigned int k = 0; j<EcalPulseShape::TEMPLATESAMPLES; k++){
+          for (unsigned int k = 0; k<EcalPulseShape::TEMPLATESAMPLES; k++){
             vi.pulseCovariance()(j,k) = pulseCovariancesEB[i].val(j,k);
           }
         }
@@ -131,7 +131,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                     sizeof(float)*EcalPulseShape::TEMPLATESAMPLES );
 
         for (unsigned int j = 0; j<EcalPulseShape::TEMPLATESAMPLES; j++){
-          for (unsigned int k = 0; j<EcalPulseShape::TEMPLATESAMPLES; k++){
+          for (unsigned int k = 0; k<EcalPulseShape::TEMPLATESAMPLES; k++){
             vi.pulseCovariance()(j,k) = pulseCovariancesEE[i].val(j,k);
           }
         }
