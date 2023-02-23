@@ -29,7 +29,6 @@
 #include "CondFormats/EcalObjects/interface/EcalTimeCalibConstantsGPU.h"
 #include "CondFormats/EcalObjects/interface/EcalTimeOffsetConstant.h"
 #include "CondFormats/EcalObjects/interface/EcalWeightSet.h"
-#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 
 #include "../EigenMatrixTypes_gpu.h"
 
@@ -189,7 +188,7 @@ namespace ecal {
     struct conf_data {
       xyz threads;
       bool runV1;
-      cudaStream_t cuStream;
+      //cudaStream_t cuStream;
     };
 
   }  // namespace multifit
