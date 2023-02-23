@@ -35,7 +35,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     const device::EDPutToken<OutputProduct> uncalibRecHitsTokenEE_;
   
     // conditions tokens
-    const edm::ESGetToken<EcalMultifitConditionsPortableDevice, EcalMultifitConditionsRcd> multifitConditionsToken_;
+    const edm::ESGetToken<EcalMultifitConditionsPortableHost, EcalMultifitConditionsRcd> multifitConditionsToken_;
     //const edm::ESGetToken<EcalMultifitParametersGPU, JobConfigurationGPURecord> multifitParametersToken_;
   
     // configuration parameters
@@ -179,7 +179,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       // schedule algorithms
       //
       ecal::multifit::entryPoint(
-          ebDigisDev, eeDigisDev, uncalibRecHitsDevEB, uncalibRecHitsDevEE, multifitConditionsDev, configParameters_, event.queue());
+          //ebDigisDev, eeDigisDev, uncalibRecHitsDevEB, uncalibRecHitsDevEE, multifitConditionsDev, configParameters_, event.queue());
+          ebDigisDev, eeDigisDev, uncalibRecHitsDevEB, uncalibRecHitsDevEE, configParameters_, event.queue());
     }
   
     // put into the event

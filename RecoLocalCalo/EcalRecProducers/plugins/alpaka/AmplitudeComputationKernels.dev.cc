@@ -281,7 +281,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                                     UncalibratedRecHitDeviceCollection& uncalibRecHitsDevEB,
                                     UncalibratedRecHitDeviceCollection& uncalibRecHitsDevEE,
                                     //EventDataForScratchGPU& scratch,
-                                    EcalMultifitConditionsPortableDevice const& conditionsDev,
+                                    //EcalMultifitConditionsPortableDevice const& conditionsDev,
                                     //ConditionsProducts const& conditions,
                                     ConfigurationParameters const& configParams,
                                     Queue& queue) {
