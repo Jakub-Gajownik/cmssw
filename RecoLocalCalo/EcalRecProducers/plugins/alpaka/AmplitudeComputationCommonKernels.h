@@ -3,7 +3,11 @@
 
 #include <cstdlib>
 #include <limits>
+#include <alpaka/alpaka.hpp>
 
+#include "CondFormats/EcalObjects/interface/alpaka/EcalMultifitConditionsPortable.h"
+#include "DataFormats/EcalDigi/interface/alpaka/EcalDigiDeviceCollection.h"
+#include "DataFormats/EcalRecHit/interface/alpaka/EcalUncalibratedRecHitDeviceCollection.h"
 //#include "CondFormats/EcalObjects/interface/EcalPulseCovariances.h"
 //#include "CondFormats/EcalObjects/interface/EcalPulseShapes.h"
 //#include "CondFormats/EcalObjects/interface/EcalSamplesCorrelation.h"
@@ -13,20 +17,20 @@
 //#include "DataFormats/Math/interface/approx_exp.h"
 //#include "DataFormats/Math/interface/approx_log.h"
 //#include "FWCore/Utilities/interface/CMSUnrollLoop.h"
-//
-//#include "AmplitudeComputationCommonKernels.h"
+#include "HeterogeneousCore/AlpakaInterface/interface/config.h"
+#include "HeterogeneousCore/AlpakaInterface/interface/traits.h"
 //#include "KernelHelpers.h"
 
 #include "DeclsForKernels.h"
-#include "EigenMatrixTypes_gpu.h"
+#include "../EigenMatrixTypes_gpu.h"
 
+class EcalPulseShape;
+// this flag setting is applied to all of the cases
+class EcalPulseCovariance;
+class EcalUncalibratedRecHit;
+  
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
-  class EcalPulseShape;
-  // this flag setting is applied to all of the cases
-  class EcalPulseCovariance;
-  class EcalUncalibratedRecHit;
-  
   namespace ecal {
     namespace multifit {
   

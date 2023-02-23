@@ -403,7 +403,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                             inputDevice.offsets.value().data(),
                             inputDevice.feds.value().data(),
                             digisDevEB.view(),
-                            digisDevEB.view(),
+                            digisDevEE.view(),
                             mapping.const_view(),
                             nbytesTotal);
       }

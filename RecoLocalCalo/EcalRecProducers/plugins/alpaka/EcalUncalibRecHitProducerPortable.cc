@@ -35,7 +35,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     const device::EDPutToken<OutputProduct> uncalibRecHitsTokenEE_;
   
     // conditions tokens
-    const edm::ESGetToken<EcalMultifitConditionsPortableHost, EcalMultifitConditionsRcd> multifitConditionsToken_;
+    const edm::ESGetToken<EcalMultifitConditionsPortableDevice, EcalMultifitConditionsRcd> multifitConditionsToken_;
     //const edm::ESGetToken<EcalMultifitParametersGPU, JobConfigurationGPURecord> multifitParametersToken_;
   
     // configuration parameters
@@ -164,7 +164,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     // stop here if there are no digis
     if (neb + nee > 0) {
       // conditions
-      auto const& multifitConditions = setup.getData(multifitConditionsToken_);
+      auto const& multifitConditionsDev = setup.getData(multifitConditionsToken_);
       //auto const& multifitParameters = setup.getData(multifitParametersToken_);
   
       //// assign ptrs/values: this is done not to change how things look downstream
@@ -179,7 +179,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       // schedule algorithms
       //
       ecal::multifit::entryPoint(
-          ebDigisDev, eeDigisDev, uncalibRecHitsDevEB, uncalibRecHitsDevEE, configParameters_, event.queue());
+          ebDigisDev, eeDigisDev, uncalibRecHitsDevEB, uncalibRecHitsDevEE, multifitConditionsDev, configParameters_, event.queue());
     }
   
     // put into the event
