@@ -40,23 +40,23 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //                ConditionsProducts const& conditions,
       //                ConfigurationParameters const& configParameters,
       //                cudaStream_t cudaStream) {
-      //  using digis_type = std::vector<uint16_t>;
-      //  using dids_type = std::vector<uint32_t>;
-      //  // accodring to the cpu setup  //----> hardcoded
-      //  bool const gainSwitchUseMaxSampleEB = true;
-      //  // accodring to the cpu setup  //----> hardcoded
-      //  bool const gainSwitchUseMaxSampleEE = false;
+        using digis_type = std::vector<uint16_t>;
+        using dids_type = std::vector<uint32_t>;
+        // accodring to the cpu setup  //----> hardcoded
+        bool const gainSwitchUseMaxSampleEB = true;
+        // accodring to the cpu setup  //----> hardcoded
+        bool const gainSwitchUseMaxSampleEE = false;
   
       //  uint32_t const offsetForHashes = conditions.offsetForHashes;
       //  uint32_t const offsetForInputs = eventInputGPU.ebDigis.size;
       //  unsigned int totalChannels = eventInputGPU.ebDigis.size + eventInputGPU.eeDigis.size;
   
-      //  //
-      //  // 1d preparation kernel
-      //  //
-      //  unsigned int nchannels_per_block = 32;
-      //  unsigned int threads_1d = 10 * nchannels_per_block;
-      //  unsigned int blocks_1d = threads_1d > 10 * totalChannels ? 1 : (totalChannels * 10 + threads_1d - 1) / threads_1d;
+        //
+        // 1d preparation kernel
+        //
+        unsigned int nchannels_per_block = 32;
+        unsigned int threads_1d = 10 * nchannels_per_block;
+        unsigned int blocks_1d = threads_1d > 10 * totalChannels ? 1 : (totalChannels * 10 + threads_1d - 1) / threads_1d;
       //  int shared_bytes = nchannels_per_block * EcalDataFrame::MAXSAMPLES *
       //                     (sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(char) + sizeof(bool));
       //  kernel_prep_1d_and_initialize<<<blocks_1d, threads_1d, shared_bytes, cudaStream>>>(
