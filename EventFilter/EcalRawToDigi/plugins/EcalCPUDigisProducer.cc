@@ -128,9 +128,6 @@ void EcalCPUDigisProducer::produce(edm::Event& event, edm::EventSetup const& set
   auto& digisEBSoAView = digisEBSoAHostColl.view();
   auto& digisEESoAView = digisEESoAHostColl.view();
 
-  std::cout << "digisEBSoAView.size(): " << digisEBSoAView.size() << std::endl;
-  std::cout << "digisEESoAView.size(): " << digisEESoAView.size() << std::endl;
-
   digisEB->resize(digisEBSoAView.size());
   digisEE->resize(digisEESoAView.size());
 
