@@ -1,5 +1,5 @@
 #include "CondFormats/DataRecord/interface/EcalMultifitConditionsRcd.h"
-#include "CondFormats/EcalObjects/interface/EcalMultifitConditionsPortable.h"
+#include "CondFormats/EcalObjects/interface/alpaka/EcalMultifitConditionsPortable.h"
 #include "CondFormats/EcalObjects/interface/EcalMultifitParametersGPU.h"
 #include "DataFormats/EcalDigi/interface/alpaka/EcalDigiDeviceCollection.h"
 #include "DataFormats/EcalRecHit/interface/alpaka/EcalUncalibratedRecHitDeviceCollection.h"
@@ -35,7 +35,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     const device::EDPutToken<OutputProduct> uncalibRecHitsTokenEE_;
   
     // conditions tokens
-    const edm::ESGetToken<EcalMultifitConditionsPortableHost, EcalMultifitConditionsRcd> multifitConditionsToken_;
+    const device::ESGetToken<EcalMultifitConditionsPortableDevice, EcalMultifitConditionsRcd> multifitConditionsToken_;
     //const edm::ESGetToken<EcalMultifitParametersGPU, JobConfigurationGPURecord> multifitParametersToken_;
   
     // configuration parameters
@@ -179,8 +179,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       // schedule algorithms
       //
       ecal::multifit::entryPoint(
-          //ebDigisDev, eeDigisDev, uncalibRecHitsDevEB, uncalibRecHitsDevEE, multifitConditionsDev, configParameters_, event.queue());
-          ebDigisDev, eeDigisDev, uncalibRecHitsDevEB, uncalibRecHitsDevEE, configParameters_, event.queue());
+          ebDigisDev, eeDigisDev, uncalibRecHitsDevEB, uncalibRecHitsDevEE,
+          multifitConditionsDev,
+          configParameters_, event.queue());
     }
   
     // put into the event

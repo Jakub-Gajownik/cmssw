@@ -27,7 +27,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       using namespace ::ecal::multifit;
 
       template <typename MatrixType>
-      ALPAKA_FN_ACC ALPAKA_FN_INLINE bool update_covariance(EcalPulseCovariance const& pulse_covariance,
+      ALPAKA_FN_ACC ALPAKA_FN_INLINE void update_covariance(EcalPulseCovariance const& pulse_covariance,
                                                             MatrixType& inverse_cov,
                                                             SampleVector const& amplitudes) {
         constexpr int nsamples = SampleVector::RowsAtCompileTime;
@@ -51,9 +51,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 //              inverse_cov(row, col) += value_sq * __ldg(&pulse_covariance.covval[row + offset][col + offset]);
             }
           }
-        }
-  
-        return true;
+        }  
       }
   
       ///
@@ -66,7 +64,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       ///   - passive constraint - satisfied constraint
       ///   - active constraint - unsatisfied (yet) constraint
       ///
-      class kernel_minimize {
+      class kernel_minimize {  
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
