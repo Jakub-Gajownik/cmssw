@@ -18,6 +18,7 @@
 #include "AmplitudeComputationCommonKernels.h"
 #include "AmplitudeComputationKernels.h"
 #include "KernelHelpers.h"
+#include "EcalUncalibRecHitMultiFitAlgoPortable.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
@@ -68,7 +69,24 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        int const nchannels) const {
+                                        InputProduct::ConstView const & dids_eb,
+                                        InputProduct::ConstView const & dids_ee,
+                                        SampleMatrix const*  noisecov,
+                                        EcalPulseCovariance const* __restrict__ pulse_covariance,
+                                        BXVectorType* bxs,
+                                        SampleVector const* __restrict__ samples,
+                                        SampleVector* amplitudesEB,
+                                        SampleVector* amplitudesEE,
+                                        PulseMatrixType const* __restrict__ pulse_matrix,
+                                        ::ecal::reco::StorageScalarType* chi2sEB,
+                                        ::ecal::reco::StorageScalarType* chi2sEE,
+                                        ::ecal::reco::StorageScalarType* energiesEB,
+                                        ::ecal::reco::StorageScalarType* energiesEE,
+                                        char* acState,
+                                        int const nchannels,
+                                        int max_iterations,
+                                        uint32_t const offsetForHashes,
+                                        uint32_t const offsetForInputs ) const {
 
 //      __global__ void kernel_minimize(uint32_t const* dids_eb,
 //                                      uint32_t const* dids_ee,
@@ -90,20 +108,26 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 //                                      uint32_t const offsetForInputs) {
 //        // FIXME: ecal has 10 samples and 10 pulses....
 //        // but this needs to be properly treated and renamed everywhere
-//        constexpr auto NSAMPLES = SampleMatrix::RowsAtCompileTime;
-//        constexpr auto NPULSES = SampleMatrix::ColsAtCompileTime;
-//        static_assert(NSAMPLES == NPULSES);
-//  
-//        using DataType = SampleVector::Scalar;
-//  
-//        extern __shared__ char shrmem[];
-//        DataType* shrMatrixLForFnnlsStorage =
-//            reinterpret_cast<DataType*>(shrmem) + calo::multifit::MapSymM<DataType, NPULSES>::total * threadIdx.x;
-//        DataType* shrAtAStorage = reinterpret_cast<DataType*>(shrmem) +
-//                                  calo::multifit::MapSymM<DataType, NPULSES>::total * (threadIdx.x + blockDim.x);
+          constexpr auto NSAMPLES = SampleMatrix::RowsAtCompileTime;
+          constexpr auto NPULSES = SampleMatrix::ColsAtCompileTime;
+          static_assert(NSAMPLES == NPULSES);
+   
+          using DataType = SampleVector::Scalar;
+  
+          //extern __shared__ char shrmem[];
+
+          DataType*  shrmem = alpaka::getDynSharedMem<DataType>(acc);
+
+          uint32_t const blockDim(alpaka::getWorkDiv<alpaka::Block, alpaka::Threads>(acc)[0u]);
+          uint32_t const threadDim(alpaka::getWorkDiv<alpaka::Thread, alpaka::Elems>(acc)[0u]);
+          uint32_t const threadIdx(alpaka::getIdx<alpaka::Block, alpaka::Threads>(acc)[0u]);
+          uint32_t const blockIdx(alpaka::getIdx<alpaka::Grid, alpaka::Blocks>(acc)[0u]);
+          
+          DataType* shrMatrixLForFnnlsStorage = shrmem + calo::multifit::MapSymM<DataType, NPULSES>::total * threadIdx;
+          DataType* shrAtAStorage = shrmem + calo::multifit::MapSymM<DataType, NPULSES>::total * (threadIdx + blockDim);
 //  
 //        // channel
-//        int idx = threadIdx.x + blockDim.x * blockIdx.x;
+          int idx = threadIdx + blockDim * blockIdx;
 //  
 //  // ref the right ptr
 //  #define ARRANGE(var) auto* var = idx >= offsetForInputs ? var##EE : var##EB
@@ -112,42 +136,42 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 //        ARRANGE(energies);
 //  #undef ARRANGE
 //  
-//        if (idx < nchannels) {
-//          if (static_cast<MinimizationState>(acState[idx]) == MinimizationState::Precomputed)
-//            return;
+          if (idx < nchannels) {
+             if (static_cast<MinimizationState>(acState[idx]) == MinimizationState::Precomputed)
+              return;
+  
+           // get the hash
+          int const inputCh = idx >= offsetForInputs ? idx - offsetForInputs : idx;
+          InputProduct::ConstView const& dids = idx >= offsetForInputs ? dids_ee : dids_eb;
+          auto const did = DetId{dids[inputCh]};
+          auto const isBarrel = did.subdetId() == EcalBarrel;
+          auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId())
+                                         : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
+  
+//          // inits
+          int iter = 0;
+          int npassive = 0;
+  
+          calo::multifit::ColumnVector<NPULSES, int> pulseOffsets;
+          CMS_UNROLL_LOOP
+          for (int i = 0; i < NPULSES; ++i)
+            pulseOffsets(i) = i;
 //  
-//          // get the hash
-//          int const inputCh = idx >= offsetForInputs ? idx - offsetForInputs : idx;
-//          auto const* dids = idx >= offsetForInputs ? dids_ee : dids_eb;
-//          auto const did = DetId{dids[inputCh]};
-//          auto const isBarrel = did.subdetId() == EcalBarrel;
-//          auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId())
-//                                         : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
+           calo::multifit::ColumnVector<NPULSES, DataType> resultAmplitudes;
+           CMS_UNROLL_LOOP
+           for (int counter = 0; counter < NPULSES; counter++)
+              resultAmplitudes(counter) = 0;
 //  
 //          // inits
-//          int iter = 0;
-//          int npassive = 0;
-//  
-//          calo::multifit::ColumnVector<NPULSES, int> pulseOffsets;
-//          CMS_UNROLL_LOOP
-//          for (int i = 0; i < NPULSES; ++i)
-//            pulseOffsets(i) = i;
-//  
-//          calo::multifit::ColumnVector<NPULSES, DataType> resultAmplitudes;
-//          CMS_UNROLL_LOOP
-//          for (int counter = 0; counter < NPULSES; counter++)
-//            resultAmplitudes(counter) = 0;
-//  
-//          // inits
-//          //SampleDecompLLT covariance_decomposition;
-//          //SampleMatrix inverse_cov;
-//          //        SampleVector::Scalar chi2 = 0, chi2_now = 0;
-//          float chi2 = 0, chi2_now = 0;
-//  
-//          // loop until ocnverge
-//          while (true) {
-//            if (iter >= max_iterations)
-//              break;
+            SampleDecompLLT covariance_decomposition;
+            SampleMatrix inverse_cov;
+            SampleVector::Scalar chi2 = 0, chi2_now = 0;
+            float chi2 = 0, chi2_now = 0;
+//
+            // loop until ocnverge
+            while (true) {
+            if (iter >= max_iterations)
+              break;
 //  
 //            //inverse_cov = noisecov[idx];
 //            //DataType covMatrixStorage[MapSymM<DataType, NSAMPLES>::total];
@@ -268,16 +292,16 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 //          for (int counter = 0; counter < NPULSES; counter++)
 //            amplitudes[inputCh](counter) = resultAmplitudes(counter);
 //        }
-//      }
           }
+        }
       };
   
       namespace v1 {
   
-        void minimization_procedure(DigiDeviceCollection const& digisDevEB,
-                                    DigiDeviceCollection const& digisDevEE,
-                                    UncalibratedRecHitDeviceCollection& uncalibRecHitsDevEB,
-                                    UncalibratedRecHitDeviceCollection& uncalibRecHitsDevEE,
+        void minimization_procedure(InputProduct const& digisDevEB,
+                                    InputProduct const& digisDevEE,
+                                    OutputProduct& uncalibRecHitsDevEB,
+                                    OutputProduct& uncalibRecHitsDevEE,
                                     //EventDataForScratchGPU& scratch,
                                     //EcalMultifitConditionsPortableDevice const& conditionsDev,
                                     //ConditionsProducts const& conditions,

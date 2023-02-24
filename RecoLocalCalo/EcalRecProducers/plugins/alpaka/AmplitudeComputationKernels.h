@@ -19,11 +19,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     namespace multifit {
   
       namespace v1 {
+
+        using InputProduct = ecal::DigiDeviceCollection;
+        using OutputProduct = ecal::UncalibratedRecHitDeviceCollection;
   
-        void minimization_procedure(DigiDeviceCollection const&,
-                                    DigiDeviceCollection const&,
-                                    UncalibratedRecHitDeviceCollection&,
-                                    UncalibratedRecHitDeviceCollection&,
+        void minimization_procedure(InputProduct const&,
+                                    InputProduct const&,
+                                    OutputProduct&,
+                                    OutputProduct&,
                                     //EventDataForScratchGPU& scratch,
                                     //EcalMultifitConditionsPortableDevice const&,
                                     //ConditionsProducts const& conditions,

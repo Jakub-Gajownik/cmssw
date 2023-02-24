@@ -32,10 +32,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   
       using namespace cms::alpakatools;
 
-      void entryPoint(DigiDeviceCollection const& digisDevEB,
-                      DigiDeviceCollection const& digisDevEE,
-                      UncalibratedRecHitDeviceCollection& uncalibRecHitsDevEB,
-                      UncalibratedRecHitDeviceCollection& uncalibRecHitsDevEE,
+      void entryPoint(InputProduct const& digisDevEB,
+                      InputProduct const& digisDevEE,
+                      OutputProduct& uncalibRecHitsDevEB,
+                      OutputProduct& uncalibRecHitsDevEE,
                       EcalMultifitConditionsPortableDevice const& conditionsDev,
                       ConfigurationParameters const& configParams,
                       Queue& queue) {
