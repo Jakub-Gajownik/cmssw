@@ -14,11 +14,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   namespace ecal {
     namespace multifit {
+
+      using InputProduct = ecal::DigiDeviceCollection;
+      using OutputProduct = ecal::UncalibratedRecHitDeviceCollection;
   
-      void entryPoint(DigiDeviceCollection const&,
-                      DigiDeviceCollection const&,
-                      UncalibratedRecHitDeviceCollection&,
-                      UncalibratedRecHitDeviceCollection&,
+      void entryPoint(InputProduct const&,
+                      InputProduct const&,
+                      OutputProduct&,
+                      OutputProduct&,
                       EcalMultifitConditionsPortableDevice const&,
                       ConfigurationParameters const&,
                       Queue&);
