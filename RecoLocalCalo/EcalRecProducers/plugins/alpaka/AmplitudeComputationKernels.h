@@ -28,7 +28,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                                     OutputProduct&,
                                     OutputProduct&,
                                     //EventDataForScratchGPU& scratch,
-                                    //EcalMultifitConditionsPortableDevice const&,
+                                    EcalMultifitConditionsPortableDevice const&,
                                     //ConditionsProducts const& conditions,
                                     ConfigurationParameters const&,
                                     Queue&);

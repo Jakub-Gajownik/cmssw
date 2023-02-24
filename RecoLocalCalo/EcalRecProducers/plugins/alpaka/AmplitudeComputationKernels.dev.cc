@@ -69,8 +69,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        InputProduct::ConstView const & dids_eb,
-                                        InputProduct::ConstView const & dids_ee,
+                                        InputProduct::ConstView const & digisEB,
+                                        InputProduct::ConstView const & digisEE,
                                         SampleMatrix const*  noisecov,
                                         EcalPulseCovariance const* __restrict__ pulse_covariance,
                                         BXVectorType* bxs,
@@ -86,7 +86,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                                         int const nchannels,
                                         int max_iterations,
                                         uint32_t const offsetForHashes,
-                                        uint32_t const offsetForInputs ) const {
+                                        uint32_t const offsetForInputs) const {
 
 //      __global__ void kernel_minimize(uint32_t const* dids_eb,
 //                                      uint32_t const* dids_ee,
@@ -125,8 +125,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           
           DataType* shrMatrixLForFnnlsStorage = shrmem + calo::multifit::MapSymM<DataType, NPULSES>::total * threadIdx;
           DataType* shrAtAStorage = shrmem + calo::multifit::MapSymM<DataType, NPULSES>::total * (threadIdx + blockDim);
-//  
-//        // channel
+  
+        // channel
           int idx = threadIdx + blockDim * blockIdx;
 //  
 //  // ref the right ptr
@@ -137,18 +137,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 //  #undef ARRANGE
 //  
           if (idx < nchannels) {
-             if (static_cast<MinimizationState>(acState[idx]) == MinimizationState::Precomputed)
+            if (static_cast<MinimizationState>(acState[idx]) == MinimizationState::Precomputed)
               return;
   
            // get the hash
           int const inputCh = idx >= offsetForInputs ? idx - offsetForInputs : idx;
-          InputProduct::ConstView const& dids = idx >= offsetForInputs ? dids_ee : dids_eb;
+          auto const* dids = idx >= offsetForInputs ? digisEE.id() : digisEB.id();
           auto const did = DetId{dids[inputCh]};
           auto const isBarrel = did.subdetId() == EcalBarrel;
           auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId())
                                          : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
   
-//          // inits
+          // inits
           int iter = 0;
           int npassive = 0;
   
@@ -156,19 +156,19 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           CMS_UNROLL_LOOP
           for (int i = 0; i < NPULSES; ++i)
             pulseOffsets(i) = i;
-//  
+
            calo::multifit::ColumnVector<NPULSES, DataType> resultAmplitudes;
            CMS_UNROLL_LOOP
            for (int counter = 0; counter < NPULSES; counter++)
               resultAmplitudes(counter) = 0;
-//  
-//          // inits
-            SampleDecompLLT covariance_decomposition;
-            SampleMatrix inverse_cov;
-            SampleVector::Scalar chi2 = 0, chi2_now = 0;
+
+          // inits
+            //SampleDecompLLT covariance_decomposition;
+            //SampleMatrix inverse_cov;
+            //        SampleVector::Scalar chi2 = 0, chi2_now = 0;
             float chi2 = 0, chi2_now = 0;
-//
-            // loop until ocnverge
+
+            // loop until converge
             while (true) {
             if (iter >= max_iterations)
               break;
@@ -291,7 +291,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 //          CMS_UNROLL_LOOP
 //          for (int counter = 0; counter < NPULSES; counter++)
 //            amplitudes[inputCh](counter) = resultAmplitudes(counter);
-//        }
+            }
           }
         }
       };
@@ -303,7 +303,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                                     OutputProduct& uncalibRecHitsDevEB,
                                     OutputProduct& uncalibRecHitsDevEE,
                                     //EventDataForScratchGPU& scratch,
-                                    //EcalMultifitConditionsPortableDevice const& conditionsDev,
+                                    EcalMultifitConditionsPortableDevice const& conditionsDev,
                                     //ConditionsProducts const& conditions,
                                     ConfigurationParameters const& configParams,
                                     Queue& queue) {
@@ -345,9 +345,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 //              offsetForInputs);
 //          cudaCheck(cudaGetLastError());
         }
-  
+
       }  // namespace v1
-  
+
     }  // namespace multifit
   }  // namespace ecal
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

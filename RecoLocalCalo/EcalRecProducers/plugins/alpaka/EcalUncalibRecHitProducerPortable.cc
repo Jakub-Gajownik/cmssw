@@ -160,6 +160,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     // output device collections
     OutputProduct uncalibRecHitsDevEB{neb, event.queue()};
     OutputProduct uncalibRecHitsDevEE{nee, event.queue()};
+    // reset the size scalar of the SoA
+    // memset takes an alpaka view that is created from the scalar in a view to the portable device collection
+    auto uncalibRecHitSizeViewEB = cms::alpakatools::make_device_view<uint32_t>(alpaka::getDev(event.queue()), uncalibRecHitsDevEB.view().size());
+    auto uncalibRecHitSizeViewEE = cms::alpakatools::make_device_view<uint32_t>(alpaka::getDev(event.queue()), uncalibRecHitsDevEE.view().size());
+    alpaka::memset(event.queue(), uncalibRecHitSizeViewEB, 0);
+    alpaka::memset(event.queue(), uncalibRecHitSizeViewEE, 0);
 
     // stop here if there are no digis
     if (neb + nee > 0) {

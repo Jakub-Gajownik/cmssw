@@ -100,7 +100,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     // output device collections
     OutputProduct digisDevEB{static_cast<int32_t>(config_.maxChannelsEB), event.queue()};
     OutputProduct digisDevEE{static_cast<int32_t>(config_.maxChannelsEE), event.queue()};
-    // reset the size scalar of the AoS
+    // reset the size scalar of the SoA
     // memset takes an alpaka view that is created from the scalar in a view to the portable device collection
     auto digiViewEB = cms::alpakatools::make_device_view<uint32_t>(alpaka::getDev(event.queue()), digisDevEB.view().size());
     auto digiViewEE = cms::alpakatools::make_device_view<uint32_t>(alpaka::getDev(event.queue()), digisDevEE.view().size());
