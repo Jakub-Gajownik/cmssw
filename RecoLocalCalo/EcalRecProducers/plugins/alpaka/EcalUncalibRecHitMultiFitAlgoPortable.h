@@ -19,8 +19,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                       DigiDeviceCollection const&,
                       UncalibratedRecHitDeviceCollection&,
                       UncalibratedRecHitDeviceCollection&,
-                      //EcalMultifitConditionsPortableDevice const&,
-                      //ConditionsProducts const&,
+                      EcalMultifitConditionsPortableDevice const&,
                       ConfigurationParameters const&,
                       Queue&);
   

@@ -27,7 +27,7 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
-  namespace ecal {
+  namespace ecal { 
     namespace multifit {
   
       using namespace cms::alpakatools;
@@ -36,8 +36,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                       DigiDeviceCollection const& digisDevEE,
                       UncalibratedRecHitDeviceCollection& uncalibRecHitsDevEB,
                       UncalibratedRecHitDeviceCollection& uncalibRecHitsDevEE,
-                      //EcalMultifitConditionsPortableDevice const& conditionsDev,
-                      //ConditionsProducts const&,
+                      EcalMultifitConditionsPortableDevice const& conditionsDev,
                       ConfigurationParameters const& configParams,
                       Queue& queue) {
   
