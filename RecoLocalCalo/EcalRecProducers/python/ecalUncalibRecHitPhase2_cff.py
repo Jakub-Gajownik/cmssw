@@ -2,9 +2,6 @@ import FWCore.ParameterSet.Config as cms
 from HeterogeneousCore.CUDACore.SwitchProducerCUDA import SwitchProducerCUDA
 from Configuration.ProcessModifiers.gpu_cff import gpu
 
-from Configuration.StandardSequences.Accelerators_cff import *
-from HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi import ProcessAcceleratorAlpaka
-
 
 from RecoLocalCalo.EcalRecProducers.ecalUncalibRecHitPhase2_cfi import ecalUncalibRecHitPhase2 as _ecalUncalibRecHitPhase2
 ecalUncalibRecHitPhase2 = SwitchProducerCUDA(
@@ -17,6 +14,9 @@ ecalUncalibRecHitPhase2Task = cms.Task(ecalUncalibRecHitPhase2)
 # conditions used on gpu
 
 
+from Configuration.StandardSequences.Accelerators_cff import *
+from HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi import ProcessAcceleratorAlpaka
+
 from RecoLocalCalo.EcalRecProducers.ecalPhase2DigiToGPUProducer_cfi import ecalPhase2DigiToGPUProducer as _ecalPhase2DigiToGPUProducer
 ecalPhase2DigiToGPUProducer = _ecalPhase2DigiToGPUProducer.clone()
 
@@ -26,21 +26,11 @@ ecalUncalibRecHitPhase2GPU = _ecalUncalibRecHitPhase2GPU.clone(
   digisLabelEB = ('ecalPhase2DigiToGPUProducer', 'ebDigis')
 )
 
-# copy the uncalibrated rechits from GPU to CPU
-from RecoLocalCalo.EcalRecProducers.ecalCPUUncalibRecHitProducer_cfi import ecalCPUUncalibRecHitProducer as _ecalCPUUncalibRecHitProducer
-ecalUncalibRecHitSoA = _ecalCPUUncalibRecHitProducer.clone(
-  recHitsInLabelEB = ('ecalUncalibRecHitPhase2GPU', 'EcalUncalibRecHitsEB'),
-  isPhase2 = True,
-  recHitsInLabelEE = None,  # remove unneeded Phase1 parameters
-  recHitsOutLabelEE = None
-)
-
-
 from RecoLocalCalo.EcalRecProducers.ecalUncalibRecHitConvertPortable2CPUFormat_cfi import ecalUncalibRecHitConvertPortable2CPUFormat as _ecalUncalibRecHitConvertPortable2CPUFormat
 gpu.toModify(ecalUncalibRecHitPhase2,
     cuda = _ecalUncalibRecHitConvertPortable2CPUFormat.clone(
         isPhase2 = True,
-        recHitsLabelGPUEB = ('ecalUncalibRecHitSoA', 'EcalUncalibRecHitsEB'),
+        recHitsLabelGPUEB = ('ecalUncalibRecHitPhase2GPU', 'EcalUncalibRecHitsEB'),
         recHitsLabelGPUEE = None,  # remove unneeded Phase1 parameters
         recHitsLabelCPUEE = None
     )
@@ -51,8 +41,6 @@ gpu.toReplaceWith(ecalUncalibRecHitPhase2Task, cms.Task(
   ecalPhase2DigiToGPUProducer, 
   # ECAL weights running on GPU
   ecalUncalibRecHitPhase2GPU,
-  # copy the uncalibrated rechits from GPU to CPU
-  ecalUncalibRecHitSoA,
   # ECAL multifit running on CPU, or convert the uncalibrated rechits from SoA to legacy format
   ecalUncalibRecHitPhase2,
 ))
