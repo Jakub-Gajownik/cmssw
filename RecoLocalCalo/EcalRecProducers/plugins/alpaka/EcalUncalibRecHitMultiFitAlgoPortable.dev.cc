@@ -15,12 +15,12 @@
 //#include "CondFormats/EcalObjects/interface/EcalXtalGroupId.h"
 //#include "DataFormats/EcalDigi/interface/EcalDataFrame.h"
 //#include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
-//
-//#include "AmplitudeComputationCommonKernels.h"
+#include "HeterogeneousCore/AlpakaInterface/interface/workdivision.h"
+
+#include "AmplitudeComputationCommonKernels.h"
 //#include "AmplitudeComputationKernels.h"
-//#include "EcalUncalibRecHitMultiFitAlgoGPU.h"
-//#include "TimeComputationKernels.h"
 #include "EcalUncalibRecHitMultiFitAlgoPortable.h"
+//#include "TimeComputationKernels.h"
 
 //#define DEBUG
 //#define ECAL_RECO_CUDA_DEBUG
@@ -53,71 +53,32 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         // accodring to the cpu setup  //----> hardcoded
         bool const gainSwitchUseMaxSampleEE = false;
   
-      //  uint32_t const offsetForHashes = conditions.offsetForHashes;
-      //  uint32_t const offsetForInputs = eventInputGPU.ebDigis.size;
-      //  unsigned int totalChannels = eventInputGPU.ebDigis.size + eventInputGPU.eeDigis.size;
-  
+        auto const totalChannels = static_cast<uint32_t>(digisDevEB->metadata().size() + digisDevEE->metadata().size());
+
         //
         // 1d preparation kernel
         //
-        unsigned int nchannels_per_block = 32;
-        unsigned int threads_1d = 10 * nchannels_per_block;
-//        unsigned int blocks_1d = threads_1d > 10 * totalChannels ? 1 : (totalChannels * 10 + threads_1d - 1) / threads_1d;
-//      //  int shared_bytes = nchannels_per_block * EcalDataFrame::MAXSAMPLES *
-//      //                     (sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(char) + sizeof(bool));
-//        auto workDiv = cms::alpakatools::make_workdiv<Acc1D>(blocks_1d, threads_1d);
+        uint32_t const nchannels_per_block = 32;
+        auto const threads_1d = 10 * nchannels_per_block;
+        auto const blocks_1d = threads_1d > 10 * totalChannels ? 1u : (totalChannels * 10 + threads_1d - 1) / threads_1d;
+      //  int shared_bytes = nchannels_per_block * EcalDataFrame::MAXSAMPLES *
+      //                     (sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(char) + sizeof(bool));
+//        auto workDivPrep1D = cms::alpakatools::make_workdiv<Acc1D>(blocks_1d, threads_1d);
 //        alpaka::exec<Acc1D>(queue,
-//		            workDiv,
+//		            workDivPrep1D,
 //			    kernel_prep_1d_and_initialize{},
 //                            digisDevEB.const_view(),
 //                            digisDevEE.const_view(),
 //                            uncalibRecHitsDevEB.view(),
 //                            uncalibRecHitsDevEE.view(),
-//                            conditionsDev.const_view(),
-//                            totalChannels);
-      //  kernel_prep_1d_and_initialize<<<blocks_1d, threads_1d, shared_bytes, cudaStream>>>(
-      //      conditions.pulseShapes.values,
-      //      eventInputGPU.ebDigis.data.get(),
-      //      eventInputGPU.ebDigis.ids.get(),
-      //      eventInputGPU.eeDigis.data.get(),
-      //      eventInputGPU.eeDigis.ids.get(),
-      //      (SampleVector*)scratch.samples.get(),
-      //      (SampleVector*)eventOutputGPU.recHitsEB.amplitudesAll.get(),
-      //      (SampleVector*)eventOutputGPU.recHitsEE.amplitudesAll.get(),
-      //      (SampleGainVector*)scratch.gainsNoise.get(),
-      //      conditions.pedestals.mean_x1,
-      //      conditions.pedestals.mean_x12,
-      //      conditions.pedestals.rms_x12,
-      //      conditions.pedestals.mean_x6,
-      //      conditions.gainRatios.gain6Over1,
-      //      conditions.gainRatios.gain12Over6,
-      //      scratch.hasSwitchToGain6.get(),
-      //      scratch.hasSwitchToGain1.get(),
-      //      scratch.isSaturated.get(),
-      //      eventOutputGPU.recHitsEB.amplitude.get(),
-      //      eventOutputGPU.recHitsEE.amplitude.get(),
-      //      eventOutputGPU.recHitsEB.chi2.get(),
-      //      eventOutputGPU.recHitsEE.chi2.get(),
-      //      eventOutputGPU.recHitsEB.pedestal.get(),
-      //      eventOutputGPU.recHitsEE.pedestal.get(),
-      //      eventOutputGPU.recHitsEB.did.get(),
-      //      eventOutputGPU.recHitsEE.did.get(),
-      //      eventOutputGPU.recHitsEB.flags.get(),
-      //      eventOutputGPU.recHitsEE.flags.get(),
-      //      scratch.acState.get(),
-      //      (BXVectorType*)scratch.activeBXs.get(),
-      //      offsetForHashes,
-      //      offsetForInputs,
-      //      gainSwitchUseMaxSampleEB,
-      //      gainSwitchUseMaxSampleEE,
-      //      totalChannels);
-      //  cudaCheck(cudaGetLastError());
+//                            conditionsDev.const_view());
   
-      //  //
-      //  // 2d preparation kernel
-      //  //
-      //  int blocks_2d = totalChannels;
+        //
+        // 2d preparation kernel
+        //
+        auto const blocks_2d = totalChannels;
       //  dim3 threads_2d{10, 10};
+      //  auto workDivPrep2D = cms::alpakatools::make_workdiv<Acc2D>(blocks_2d, threads_2d);
       //  kernel_prep_2d<<<blocks_2d, threads_2d, 0, cudaStream>>>((SampleGainVector*)scratch.gainsNoise.get(),
       //                                                           eventInputGPU.ebDigis.ids.get(),
       //                                                           eventInputGPU.eeDigis.ids.get(),

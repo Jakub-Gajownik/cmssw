@@ -1,14 +1,7 @@
 #ifndef RecoLocalCalo_EcalRecProducers_plugins_alpaka_KernelHelpers_h
 #define RecoLocalCalo_EcalRecProducers_plugins_alpaka_KernelHelpers_h
 
-#include "DataFormats/CaloRecHit/interface/MultifitComputations.h"
-
-#include <cmath>
-#include <limits>
-#include <type_traits>
-
 #include <alpaka/alpaka.hpp>
-#include <Eigen/Dense>
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 

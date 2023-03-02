@@ -24,33 +24,25 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           ALPAKA_FN_ACC ALPAKA_FN_INLINE uint32_t iphi(uint32_t id) { return id & 0x1FF; }
   
           ALPAKA_FN_ACC int dccFromSm(int ism) {
-            int iz = 1;
-            if (ism > 18)
-              iz = -1;
-            if (iz == -1)
-              ism -= 18;
             int idcc = 9 + ism;
-            if (iz == +1)
+            if (ism > 18)
+              idcc -= 18;
+            else
               idcc += 18;
             return idcc;
           }
   
           ALPAKA_FN_ACC int sm(int ieta, int iphi) {
-            int iz = 1;
+            if (iphi > 360)
+              iphi -= 360;
+            int ism = (iphi - 1) / 20 + 1;
             if (ieta < 0)
-              iz = -1;
-            ieta *= iz;
-            int iphi_ = iphi;
-            if (iphi_ > 360)
-              iphi_ -= 360;
-            int ism = (iphi_ - 1) / 20 + 1;
-            if (iz == -1)
               ism += 18;
             return ism;
           }
   
           ALPAKA_FN_ACC int dcc(int ieta, int iphi) {
-            int ism = sm(ieta, iphi);
+            int const ism = sm(ieta, iphi);
             return dccFromSm(ism);
           }
   
@@ -66,21 +58,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                 // clang-format on
             };
   
-            int il, ic, ii;
-            const int iym = 4;
-            const int ixm = 17;
-            int iX_ = iX + 1;
-            int iY_ = iY + 1;
-            il = iym - iY_;
-            ic = iX_ - 1;
-            ii = il * ixm + ic;
+            constexpr int iym = 4;
+            constexpr int ixm = 17;
+            int const il = iym - iY + 1;
+            int const ic = iX;
+            int const ii = il * ixm + ic;
             if (ii < 0 || ii > (int)(sizeof(idx_) / sizeof(int))) {
               return -1;
             };
             return idx_[ii];
           }
   
-          ALPAKA_FN_ACC int localCoord_x(int ieta, int iphi) {
+          ALPAKA_FN_ACC int localCoord_x(int ieta) {
             int iz = 1;
             if (ieta < 0) {
               iz = -1;
@@ -92,16 +81,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           }
   
           ALPAKA_FN_ACC int localCoord_y(int ieta, int iphi) {
-            int iz = 1;
+            if (iphi > 360) {
+              iphi -= 360;
+            }
+            int iy = (iphi - 1) % 20;
             if (ieta < 0) {
-              iz = -1;
-            }
-            int iphi_ = iphi;
-            if (iphi_ > 360) {
-              iphi_ -= 360;
-            }
-            int iy = (iphi_ - 1) % 20;
-            if (iz == -1) {
               iy = 19 - iy;
             }
   
@@ -109,14 +93,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           }
   
           ALPAKA_FN_ACC int lmmod(int ieta, int iphi) {
-            int ix = localCoord_x(ieta, iphi);
-            int iy = localCoord_y(ieta, iphi);
+            int const ix = localCoord_x(ieta);
+            int const iy = localCoord_y(ieta, iphi);
   
             return lm_channel(ix / 5, iy / 5);
           }
   
           ALPAKA_FN_ACC int side(int ieta, int iphi) {
-            int ilmmod = lmmod(ieta, iphi);
+            int const ilmmod = lmmod(ieta, iphi);
             return (ilmmod % 2 == 0) ? 1 : 0;
           }
   
@@ -143,10 +127,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           ieta = -ietaAbs(id);
         }
   
-        int idcc = dcc(ieta, (int)(iphi(id)));
-        int ism = idcc - 9;
+        int const idcc = dcc(ieta, (int)(iphi(id)));
+        int const ism = idcc - 9;
   
-        int iside = side(ieta, (int)(iphi(id)));
+        int const iside = side(ieta, (int)(iphi(id)));
   
         return (1 + 2 * (ism - 1) + iside);
       }
@@ -187,19 +171,19 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
               7129, 7154, 7179, 7204, 7219, 7234, 7249, 7264, 7274, 7284, 7294, 7304, 7314};
   
           ALPAKA_FN_ACC int quadrant(int iX, int iY) {
-            bool near = iX >= 11;
-            bool far = !near;
-            bool top = iY >= 11;
-            bool bot = !top;
+            bool const near = iX >= 11;
+            bool const far = !near;
+            bool const top = iY >= 11;
+            bool const bot = !top;
   
             int iquad = 0;
             if (near && top)
               iquad = 1;
-            if (far && top)
+            else if (far && top)
               iquad = 2;
-            if (far && bot)
+            else if (far && bot)
               iquad = 3;
-            if (near && bot)
+            else
               iquad = 4;
   
             return iquad;
@@ -240,14 +224,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                 // clang-format on
             };
   
-            int iym, ixm, il, ic, ii;
-            iym = 20;
-            ixm = 20;
-            int iX_ = iX;
-            int iY_ = iY;
-            il = iym - iY_;
-            ic = iX_ - 1;
-            ii = il * ixm + ic;
+            constexpr int iym = 20;
+            constexpr int ixm = 20;
+            int const il = iym - iY;
+            int const ic = iX - 1;
+            int const ii = il * ixm + ic;
   
             if (ii < 0 || ii > (int)(sizeof(idx_) / sizeof(int)) || idx_[ii] == 0) {
               return -1;
@@ -276,18 +257,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         using namespace internal::endcap;
   
         // SuperCrysCoord
-        uint32_t iX = (ix(id) - 1) / 5 + 1;
-        uint32_t iY = (iy(id) - 1) / 5 + 1;
+        uint32_t const iX = (ix(id) - 1) / 5 + 1;
+        uint32_t const iY = (iy(id) - 1) / 5 + 1;
   
         // Correct convention
         //   * @param iz iz/zside index: -1 for EE-, +1 for EE+
         //   https://github.com/cms-sw/cmssw/blob/master/DataFormats/EcalDetId/interface/EEDetId.h#L68-L71
         //   zside in https://github.com/cms-sw/cmssw/blob/master/CalibCalorimetry/EcalLaserCorrection/src/EcalLaserDbService.cc#L63
         //
-        int iz = positiveZ(id) ? 1 : -1;
+        int const iz = positiveZ(id) ? 1 : -1;
   
-        int iquad = quadrant(iX, iY);
-        int isect = sector(iX, iY);
+        int const iquad = quadrant(iX, iY);
+        int const isect = sector(iX, iY);
         if (isect < 0)
           return -1;
   
@@ -297,7 +278,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           ilmr += 9;
         if (ilmr == 9)
           ilmr++;
-        if (ilmr == 8 && iquad == 4)
+        else if (ilmr == 8 && iquad == 4)
           ilmr++;
         if (iz == +1)
           ilmr += 72;
