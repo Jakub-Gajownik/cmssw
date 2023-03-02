@@ -9,6 +9,7 @@
 
 #include "CondFormats/EcalObjects/interface/EcalPulseCovariances.h"
 #include "CondFormats/EcalObjects/interface/EcalPulseShapes.h"
+#include "DataFormats/CaloRecHit/interface/MultifitComputations.h"
 #include "DataFormats/EcalDigi/interface/EcalDataFrame.h"
 #include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
 #include "DataFormats/Math/interface/approx_exp.h"

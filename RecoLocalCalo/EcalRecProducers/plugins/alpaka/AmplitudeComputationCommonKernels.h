@@ -11,18 +11,18 @@
 //#include "CondFormats/EcalObjects/interface/EcalPulseCovariances.h"
 //#include "CondFormats/EcalObjects/interface/EcalPulseShapes.h"
 //#include "CondFormats/EcalObjects/interface/EcalSamplesCorrelation.h"
-//#include "DataFormats/EcalDigi/interface/EcalDataFrame.h"
-//#include "DataFormats/EcalDigi/interface/EcalMGPASample.h"
+#include "DataFormats/EcalDigi/interface/EcalDataFrame.h"
+#include "DataFormats/EcalDigi/interface/EcalMGPASample.h"
 //#include "DataFormats/EcalRecHit/interface/EcalUncalibratedRecHit.h"
 //#include "DataFormats/Math/interface/approx_exp.h"
 //#include "DataFormats/Math/interface/approx_log.h"
 //#include "FWCore/Utilities/interface/CMSUnrollLoop.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/traits.h"
-//#include "KernelHelpers.h"
 
 #include "DeclsForKernels.h"
 #include "../EigenMatrixTypes_gpu.h"
+#include "KernelHelpers.h"
 
 class EcalPulseShape;
 // this flag setting is applied to all of the cases
@@ -46,7 +46,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
                                         DigiDeviceCollection::ConstView digisDevEB,
                                         DigiDeviceCollection::ConstView digisDevEE,
-                                        int const nchannels) const {
+                                        UncalibratedRecHitDeviceCollection::View uncalibRecHitsEB,
+                                        UncalibratedRecHitDeviceCollection::View uncalibRecHitsEE,
+                                        EcalMultifitConditionsPortableDevice::ConstView conditionsDev) const {
 
      // __global__ void kernel_prep_1d_and_initialize(EcalPulseShape const* shapes_in,
      //                                               uint16_t const* digis_in_eb,
@@ -83,23 +85,29 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
      //                                               bool const gainSwitchUseMaxSampleEB,
      //                                               bool const gainSwitchUseMaxSampleEE,
      //                                               int const nchannels);
-//            constexpr bool dynamicPedestal = false;  //---- default to false, ok
-//            constexpr int nsamples = EcalDataFrame::MAXSAMPLES;
-//            constexpr int sample_max = 5;
-//            constexpr int full_pulse_max = 9;
-//            int const tx = threadIdx.x + blockIdx.x * blockDim.x;
-//            int const nchannels_per_block = blockDim.x / nsamples;
-//            int const ch = tx / nsamples;
-//            // for accessing input arrays
-//            int const inputCh = ch >= offsetForInputs ? ch - offsetForInputs : ch;
-//            int const inputTx = ch >= offsetForInputs ? tx - offsetForInputs * 10 : tx;
-//            // eb is first and then ee
-//            auto const* digis_in = ch >= offsetForInputs ? digis_in_ee : digis_in_eb;
-//            auto const* dids = ch >= offsetForInputs ? dids_ee : dids_eb;
-//            int const sample = threadIdx.x % nsamples;
-//
-//            // need to ref the right ptr
-//            // macro is for clarity and safety
+            constexpr bool dynamicPedestal = false;  //---- default to false, ok
+            constexpr int nsamples = EcalDataFrame::MAXSAMPLES;
+            constexpr int sample_max = 5;
+            constexpr int full_pulse_max = 9;
+
+            auto const nchannelsEB = digisDevEB.size();
+            auto const nchannels = nchannelsEB + digisDevEE.size();
+            auto const threadIdx = alpaka::getIdx<alpaka::Block, alpaka::Threads>(acc)[0u];
+            auto const blockIdx = alpaka::getIdx<alpaka::Grid, alpaka::Blocks>(acc)[0u];
+            auto const blockDim = alpaka::getWorkDiv<alpaka::Block, alpaka::Threads>(acc)[0u];
+            auto const tx = threadIdx + blockIdx * blockDim;
+            auto const nchannels_per_block = blockDim / nsamples;
+            auto const ch = tx / nsamples;
+            // for accessing input arrays
+            int const inputCh = ch >= nchannelsEB ? ch - nchannelsEB : ch;
+            int const inputTx = ch >= nchannelsEB ? tx - nchannelsEB * 10 : tx;
+            // eb is first and then ee
+            auto const* digis_in = ch >= nchannelsEB ? digisDevEE.data()->data() : digisDevEB.data()->data();
+            auto const* dids = ch >= nchannelsEB ? digisDevEE.id() : digisDevEB.id();
+            auto const sample = threadIdx % nsamples;
+
+            // need to ref the right ptr
+            // macro is for clarity and safety
 //#define ARRANGE(var) auto* var = ch >= offsetForInputs ? var##EE : var##EB
 //            ARRANGE(amplitudesForMinimization);
 //            ARRANGE(energies);
@@ -108,11 +116,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 //            ARRANGE(dids_out);
 //            ARRANGE(flags);
 //#undef ARRANGE
-//
-//            if (ch < nchannels) {
-//              // array of 10 x channels per block
-//              // TODO: any other way of doing simple reduction
-//              // assume bool is 1 byte, should be quite safe
+
+            if (ch < nchannels) {
+              // array of 10 x channels per block
+              // TODO: any other way of doing simple reduction
+              // assume bool is 1 byte, should be quite safe
 //              extern __shared__ char shared_mem[];
 //              bool* shr_hasSwitchToGain6 = reinterpret_cast<bool*>(shared_mem);
 //              bool* shr_hasSwitchToGain1 = shr_hasSwitchToGain6 + nchannels_per_block * nsamples;
@@ -120,32 +128,32 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 //              bool* shr_isSaturated = shr_hasSwitchToGain0 + nchannels_per_block * nsamples;
 //              bool* shr_hasSwitchToGain0_tmp = shr_isSaturated + nchannels_per_block * nsamples;
 //              char* shr_counts = reinterpret_cast<char*>(shr_hasSwitchToGain0_tmp) + nchannels_per_block * nsamples;
-//
-//              //
-//              // indices
-//              //
-//              auto const did = DetId{dids[inputCh]};
-//              auto const isBarrel = did.subdetId() == EcalBarrel;
-//              // TODO offset for ee, 0 for eb
-//              auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId())
-//                                             : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
-//
-//              //
-//              // pulse shape template
-//
-//              // will be used in the future for setting state
-//              auto const rmsForChecking = rms_x12[hashedId];
-//
-//              //
-//              // amplitudes
-//              //
-//              int const adc = ecalMGPA::adc(digis_in[inputTx]);
-//              int const gainId = ecalMGPA::gainId(digis_in[inputTx]);
-//              SampleVector::Scalar amplitude = 0.;
-//              SampleVector::Scalar pedestal = 0.;
-//              SampleVector::Scalar gainratio = 0.;
-//
-//              // store into shared mem for initialization
+
+              //
+              // indices
+              //
+              auto const did = DetId{dids[inputCh]};
+              auto const isBarrel = did.subdetId() == EcalBarrel;
+              // TODO offset for ee, 0 for eb
+              auto const hashedId = isBarrel ? reconstruction::hashedIndexEB(did.rawId())
+                                             : nchannelsEB + reconstruction::hashedIndexEE(did.rawId());
+
+              //
+              // pulse shape template
+
+              // will be used in the future for setting state
+              auto const rmsForChecking = conditionsDev.pedestals_rms_x12()[hashedId];
+
+              //
+              // amplitudes
+              //
+              int const adc = ecalMGPA::adc(digis_in[inputTx]);
+              int const gainId = ecalMGPA::gainId(digis_in[inputTx]);
+              ::ecal::multifit::SampleVector::Scalar amplitude = 0.;
+              ::ecal::multifit::SampleVector::Scalar pedestal = 0.;
+              ::ecal::multifit::SampleVector::Scalar gainratio = 0.;
+
+              // store into shared mem for initialization
 //              shr_hasSwitchToGain6[threadIdx.x] = gainId == EcalMgpaBitwiseGain6;
 //              shr_hasSwitchToGain1[threadIdx.x] = gainId == EcalMgpaBitwiseGain1;
 //              shr_hasSwitchToGain0_tmp[threadIdx.x] = gainId == EcalMgpaBitwiseGain0;
@@ -339,7 +347,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 //                // for the case when no shortcuts were taken
 //                flags[inputCh] = flag;
 //              }
-//            }
+            }
           }
       };
   
