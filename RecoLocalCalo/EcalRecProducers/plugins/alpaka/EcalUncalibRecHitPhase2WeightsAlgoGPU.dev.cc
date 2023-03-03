@@ -82,17 +82,17 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
       void phase2Weights(ecal::DigiPhase2DeviceCollection const &digis,
                          ecal::UncalibratedRecHitDeviceCollection &recHits,
-                         cms::alpakatools::host_buffer<double[]> &weights_,
+                         cms::alpakatools::host_buffer<double[]> &weights,
                          Queue  &queue)
       {
 
         auto weights_d = make_device_buffer<double[]>(queue,ecalPh2::sampleSize);  
-        alpaka::memcpy(queue, weights_d, weights_);
+        alpaka::memcpy(queue, weights_d, weights);
 
         // use 64 items per group (this value is arbitrary, but it's a reasonable starting point)
         uint32_t items = 64;
         // use as many groups as needed to cover the whole problem
-        uint32_t groups = divide_up_by(digis.const_view().size(), items);
+        uint32_t groups = divide_up_by(digis->metadata().size(), items);
 
         auto workDiv = make_workdiv<Acc1D>(groups, items);
         
