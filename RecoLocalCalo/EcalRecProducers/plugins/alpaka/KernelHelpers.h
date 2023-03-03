@@ -2,6 +2,7 @@
 #define RecoLocalCalo_EcalRecProducers_plugins_alpaka_KernelHelpers_h
 
 #include <alpaka/alpaka.hpp>
+#include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
@@ -20,4 +21,4 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   }  // namespace ecal
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
 
-#endif  // RecoLocalCalo_EcalRecProducers_plugins_KernelHelpers_h
+#endif  // RecoLocalCalo_EcalRecProducers_plugins_alpaka_KernelHelpers_h
