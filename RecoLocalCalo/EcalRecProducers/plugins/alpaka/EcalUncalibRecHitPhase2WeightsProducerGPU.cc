@@ -4,8 +4,6 @@
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Utilities/interface/StreamID.h"
 #include "FWCore/Utilities/interface/InputTag.h"
-#include "FWCore/Utilities/interface/EDGetToken.h"
-
 
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/Event.h"
@@ -47,18 +45,17 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
   EcalUncalibRecHitPhase2WeightsProducerGPU::EcalUncalibRecHitPhase2WeightsProducerGPU(const edm::ParameterSet &ps) 
       : weights_{cms::alpakatools::make_host_buffer<double[]>(ecalPh2::sampleSize)},
         digisToken_{consumes(ps.getParameter<edm::InputTag>("digisLabelEB"))},
-        recHitsToken_{produces()} {
-          //extracting the weights, for-loop to save them to the buffer even if the size is different than standard 
-          const auto weights = ps.getParameter<std::vector<double>>("weights");
-          for (unsigned int i=0; i< ecalPh2::sampleSize; i++) {
-            if (i < weights.size()){
-            weights_[i] = weights[i];
-            }
-            else {
-              weights_[i]= 0;
-            }
-          }
-        }
+        recHitsToken_{produces(ps.getParameter<std::string>("recHitsLabelEB"))} {
+    //extracting the weights, for-loop to save them to the buffer even if the size is different than standard
+    const auto weights = ps.getParameter<std::vector<double>>("weights");
+    for (unsigned int i = 0; i < ecalPh2::sampleSize; ++i) {
+      if (i < weights.size()){
+        weights_[i] = weights[i];
+      } else {
+        weights_[i]= 0;
+      }
+    }
+  }
   
   void EcalUncalibRecHitPhase2WeightsProducerGPU::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
     edm::ParameterSetDescription desc;
