@@ -16,7 +16,6 @@
 #include "DataFormats/Math/interface/approx_log.h"
 #include "FWCore/Utilities/interface/CMSUnrollLoop.h"
 
-#include "AmplitudeComputationCommonKernels.h"
 #include "AmplitudeComputationKernels.h"
 #include "KernelHelpers.h"
 #include "EcalUncalibRecHitMultiFitAlgoPortable.h"

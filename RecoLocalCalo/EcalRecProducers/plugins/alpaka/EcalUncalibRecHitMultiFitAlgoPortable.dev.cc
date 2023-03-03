@@ -18,7 +18,7 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/workdivision.h"
 
 #include "AmplitudeComputationCommonKernels.h"
-//#include "AmplitudeComputationKernels.h"
+#include "AmplitudeComputationKernels.h"
 #include "EcalUncalibRecHitMultiFitAlgoPortable.h"
 //#include "TimeComputationKernels.h"
 
@@ -63,15 +63,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         auto const blocks_1d = threads_1d > 10 * totalChannels ? 1u : (totalChannels * 10 + threads_1d - 1) / threads_1d;
       //  int shared_bytes = nchannels_per_block * EcalDataFrame::MAXSAMPLES *
       //                     (sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(char) + sizeof(bool));
-//        auto workDivPrep1D = cms::alpakatools::make_workdiv<Acc1D>(blocks_1d, threads_1d);
-//        alpaka::exec<Acc1D>(queue,
-//		            workDivPrep1D,
-//			    kernel_prep_1d_and_initialize{},
-//                            digisDevEB.const_view(),
-//                            digisDevEE.const_view(),
-//                            uncalibRecHitsDevEB.view(),
-//                            uncalibRecHitsDevEE.view(),
-//                            conditionsDev.const_view());
+        auto workDivPrep1D = cms::alpakatools::make_workdiv<Acc1D>(blocks_1d, threads_1d);
+        alpaka::exec<Acc1D>(queue,
+		            workDivPrep1D,
+			    kernel_prep_1d_and_initialize{},
+                            digisDevEB.const_view(),
+                            digisDevEE.const_view(),
+                            uncalibRecHitsDevEB.view(),
+                            uncalibRecHitsDevEE.view(),
+                            conditionsDev.const_view());
   
         //
         // 2d preparation kernel
