@@ -42,7 +42,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         auto const nchannels = digisDev.size();
 
         auto* amplitude = recHitsDev.amplitude();                 // nchannels_per_block elements
-        const auto* digis = digisDev.data();              // nchannels_per_block elements
+        const auto* digis = &digisDev.data()->array;              // nchannels_per_block elements
 
         //unsigned int const threadx = alpaka::getIdx<alpaka::Block, alpaka::Threads>(acc)[0u];
         //unsigned int const blockx = alpaka::getIdx<alpaka::Grid, alpaka::Blocks>(acc)[0u];               //also unused currently
@@ -62,7 +62,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                                  ecalPh2::gains[ecalLiteDTU::gainId(digi)] * *(weightsData + sample));
             if (ecalLiteDTU::gainId(digi)== 1)
               g1=true;
-            recHitsDev.outOfTimeAmplitudes()[tx][sample]= 0.;
+            recHitsDev.outOfTimeAmplitudes()[tx].array[sample]= 0.;
           }
           recHitsDev.amplitudeError()[tx] = 1.0f;
           recHitsDev.id()[tx] = did.rawId();

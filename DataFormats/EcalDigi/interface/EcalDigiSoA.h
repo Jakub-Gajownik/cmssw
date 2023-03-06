@@ -4,15 +4,15 @@
 #include "DataFormats/EcalDigi/interface/EcalConstants.h"
 #include "DataFormats/SoATemplate/interface/SoALayout.h"
 
-#include <array>
-
 namespace ecal {
 
-  using DataArray = std::array<uint16_t, ecalPh1::sampleSize>;
+  // due to a ROOT limitation the std::array needs to be wrapped in a struct
+  // https://github.com/root-project/root/issues/12007
+  using DataArrayStruct = StdArrayStruct<uint16_t, ecalPh1::sampleSize>;
 
   GENERATE_SOA_LAYOUT(EcalDigiSoALayout,
     SOA_COLUMN(uint32_t, id),
-    SOA_COLUMN(DataArray, data),
+    SOA_COLUMN(DataArrayStruct, data),
     SOA_SCALAR(uint32_t, size)
   )
 
