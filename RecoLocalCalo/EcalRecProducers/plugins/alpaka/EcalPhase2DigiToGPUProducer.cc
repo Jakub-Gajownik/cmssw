@@ -64,6 +64,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       }
       ++i;
     }
+    DigisHostCollView.size() = i;
 
     //copy collection from host to device
     alpaka::memcpy(event.queue(), DigisDevColl.buffer(), DigisHostColl.buffer());
