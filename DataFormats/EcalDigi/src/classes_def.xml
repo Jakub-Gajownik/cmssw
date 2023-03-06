@@ -132,8 +132,10 @@
    <class name="edm::Wrapper<edm::SortedCollection<EcalPnDiodeDigi,edm::StrictWeakOrdering<EcalPnDiodeDigi> > >" id="8104DEE4-28BC-284A-8397-7EF8F5DBA1B1"/>
    <class name="edm::Wrapper<edm::SortedCollection<EcalMatacqDigi,edm::StrictWeakOrdering<EcalMatacqDigi> > >" id="09B54EAE-7A1A-B892-117A-EFE5E32AF982"/>
 
+   <class name="ecal::DataArrayStruct"/>
    <class name="ecal::EcalDigiSoA"/>
    <class name="ecal::EcalDigiSoA::View"/>
+   <class name="ecal::DataArrayPhase2Struct"/>
    <class name="ecal::EcalDigiPhase2SoA"/>
    <class name="ecal::EcalDigiPhase2SoA::View"/>
 </lcgdict>

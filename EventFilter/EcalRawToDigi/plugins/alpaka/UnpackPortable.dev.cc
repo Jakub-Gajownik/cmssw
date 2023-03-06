@@ -42,7 +42,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             // size
             auto const gridDim = alpaka::getWorkDiv<alpaka::Grid, alpaka::Blocks>(acc)[0u];
             auto const size = ifed == gridDim - 1 ? nbytesTotal - offset : offsets[ifed + 1] - offset;
-            auto* samples = isBarrel ? digisDevEB.data()->data() : digisDevEE.data()->data();
+            auto* samples = isBarrel ? digisDevEB.data()->array.data() : digisDevEE.data()->array.data();
             auto* ids = isBarrel ? digisDevEB.id() : digisDevEE.id();
             auto* pChannelsCounter = isBarrel ? &digisDevEB.size() : &digisDevEE.size();
   
