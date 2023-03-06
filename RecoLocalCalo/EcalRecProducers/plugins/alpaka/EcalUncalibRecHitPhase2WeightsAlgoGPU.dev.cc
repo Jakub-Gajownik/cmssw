@@ -40,6 +40,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         constexpr int nsamples = EcalDataFrame_Ph2::MAXSAMPLES;                                    
         //unsigned int nchannels_per_block = alpaka::getWorkDiv<alpaka::Block, alpaka::Threads>(acc)[0u];    //unused currently
         auto const nchannels = digisDev.size();
+        // one thread sets the output collection size scalar
+        if (alpaka::getIdx<alpaka::Grid, alpaka::Threads>(acc)[0u] == 0) {
+          recHitsDev.size() = digisDev.size();
+        }
 
         auto* amplitude = recHitsDev.amplitude();                 // nchannels_per_block elements
         const auto* digis = &digisDev.data()->array;              // nchannels_per_block elements
