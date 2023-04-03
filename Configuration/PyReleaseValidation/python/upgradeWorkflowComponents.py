@@ -1710,6 +1710,13 @@ upgradeWFs['ecalDevelGPU'] = UpgradeWorkflow_ecalDevel(
     offset = 0.612,
 )
 
+# ECAL Phase 2 workflow for CPU vs. GPU validation
+upgradeWFs['ecalDevelGPU'] = UpgradeWorkflow_ecalDevel(
+    reco = {'--procModifiers': 'gpuValidation'},
+    suffix = '_ecalDevelGPU_Validation',
+    offset = 0.613,
+)
+
 class UpgradeWorkflow_0T(UpgradeWorkflow):
     def setup_(self, step, stepName, stepDict, k, properties):
         myGT=stepDict[step][k]['--conditions']
