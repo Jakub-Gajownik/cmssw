@@ -1846,6 +1846,13 @@ upgradeWFs['ecalDevelGPU'] = UpgradeWorkflow_ecalDevel(
     offset = 0.612,
 )
 
+# ECAL Phase 2 workflow for CPU vs. GPU validation
+upgradeWFs['ecalDevelGPU'] = UpgradeWorkflow_ecalDevel(
+    reco = {'--procModifiers': 'gpuValidation'},
+    suffix = '_ecalDevelGPU_Validation',
+    offset = 0.613,
+)
+
 # ECAL component
 class UpgradeWorkflow_ECalComponent(UpgradeWorkflow):
     def __init__(self, suffix, offset, ecalMod,

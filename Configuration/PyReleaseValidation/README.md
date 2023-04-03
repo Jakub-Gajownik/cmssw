@@ -66,6 +66,7 @@ The offsets currently in use are:
 * 0.31: Photon energy corrections with DRN architecture
 * 0.61: ECAL `phase2_ecal_devel` era, on CPU
 * 0.612: ECAL `phase2_ecal_devel` era, with automatic offload to GPU if available
+* 0.613: ECAL `phase2_ecal_devel` era, GPU vs. CPU validation
 * 0.631: ECAL component-method based digis
 * 0.632: ECAL component-method based finely-sampled waveforms
 * 0.75: Phase-2 HLT
