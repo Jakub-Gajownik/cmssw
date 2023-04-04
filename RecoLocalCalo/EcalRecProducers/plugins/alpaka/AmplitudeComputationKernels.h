@@ -9,9 +9,9 @@
 #include "DeclsForKernels.h"
 #include "../EigenMatrixTypes_gpu.h"
 
-class EcalPulseShape;
-class EcalPulseCovariance;
-class EcalUncalibratedRecHit;
+struct EcalPulseShape;
+struct EcalPulseCovariance;
+struct EcalUncalibratedRecHit;
   
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 

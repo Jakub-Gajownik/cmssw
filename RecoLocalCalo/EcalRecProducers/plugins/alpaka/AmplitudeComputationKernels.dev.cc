@@ -127,7 +127,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           DataType* shrAtAStorage = shrmem + calo::multifit::MapSymM<DataType, NPULSES>::total * (threadIdx + blockDim);
   
         // channel
-          int idx = threadIdx + blockDim * blockIdx;
+          const auto idx = threadIdx + blockDim * blockIdx;
 //  
 //  // ref the right ptr
 //  #define ARRANGE(var) auto* var = idx >= offsetForInputs ? var##EE : var##EB

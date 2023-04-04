@@ -1,8 +1,6 @@
 #ifndef RecoLocalCalo_EcalRecProducers_plugins_alpaka_EcalUncalibRecHitPhase2WeightsAlgoGPU_h
 #define RecoLocalCalo_EcalRecProducers_plugins_alpaka_EcalUncalibRecHitPhase2WeightsAlgoGPU_h
 
-#include "CUDADataFormats/EcalDigi/interface/DigisCollection.h"
-
 #include "DataFormats/EcalDigi/interface/alpaka/EcalDigiPhase2DeviceCollection.h" //
 #include "DataFormats/EcalRecHit/interface/alpaka/EcalUncalibratedRecHitDeviceCollection.h" //
 

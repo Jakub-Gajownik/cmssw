@@ -24,10 +24,10 @@
 #include "../EigenMatrixTypes_gpu.h"
 #include "KernelHelpers.h"
 
-class EcalPulseShape;
+struct EcalPulseShape;
 // this flag setting is applied to all of the cases
-class EcalPulseCovariance;
-class EcalUncalibratedRecHit;
+struct EcalPulseCovariance;
+struct EcalUncalibratedRecHit;
   
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
@@ -102,7 +102,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             int const inputCh = ch >= nchannelsEB ? ch - nchannelsEB : ch;
             int const inputTx = ch >= nchannelsEB ? tx - nchannelsEB * 10 : tx;
             // eb is first and then ee
-            auto const* digis_in = ch >= nchannelsEB ? digisDevEE.data()->data() : digisDevEB.data()->data();
+            auto const* digis_in = ch >= nchannelsEB ? digisDevEE.data()->array.data() : digisDevEB.data()->array.data(); // is there a way to use digisDevEE.data()->data() instead?
             auto const* dids = ch >= nchannelsEB ? digisDevEE.id() : digisDevEB.id();
             auto const sample = threadIdx % nsamples;
 

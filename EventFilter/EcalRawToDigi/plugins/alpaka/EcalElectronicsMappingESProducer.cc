@@ -14,7 +14,7 @@
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
   class EcalElectronicsMappingPortableESProducer : public ESProducer {
   public:
-    EcalElectronicsMappingPortableESProducer(edm::ParameterSet const& iConfig) {
+    EcalElectronicsMappingPortableESProducer(edm::ParameterSet const& iConfig) : ESProducer(iConfig) {
       auto cc = setWhatProduced(this);
       token_ = cc.consumes();
     }
