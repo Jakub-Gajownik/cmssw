@@ -38,7 +38,7 @@
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
   class EcalMultifitConditionsPortableESProducer : public ESProducer {
   public:
-    EcalMultifitConditionsPortableESProducer(edm::ParameterSet const& iConfig) {
+    EcalMultifitConditionsPortableESProducer(edm::ParameterSet const& iConfig) : ESProducer(iConfig) {
       auto cc = setWhatProduced(this);
       pedestalsToken_ = cc.consumes();
       gainRatiosToken_ = cc.consumes();

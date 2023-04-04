@@ -1,6 +1,5 @@
 #include "CondFormats/DataRecord/interface/EcalMultifitConditionsRcd.h"
 #include "CondFormats/EcalObjects/interface/alpaka/EcalMultifitConditionsPortable.h"
-#include "CondFormats/EcalObjects/interface/EcalMultifitParametersGPU.h"
 #include "DataFormats/EcalDigi/interface/alpaka/EcalDigiDeviceCollection.h"
 #include "DataFormats/EcalRecHit/interface/alpaka/EcalUncalibratedRecHitDeviceCollection.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"

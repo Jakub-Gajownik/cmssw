@@ -3,30 +3,26 @@
 
 #include <vector>
 
-#include "CUDADataFormats/EcalDigi/interface/DigisCollection.h"
-#include "CUDADataFormats/EcalRecHitSoA/interface/EcalRecHit.h"
-#include "CUDADataFormats/EcalRecHitSoA/interface/EcalUncalibratedRecHit.h"
-#include "CUDADataFormats/EcalRecHitSoA/interface/RecoTypes.h"
 #include "CondFormats/EcalObjects/interface/EcalChannelStatus.h"
 #include "CondFormats/EcalObjects/interface/EcalChannelStatusCode.h"
 #include "CondFormats/EcalObjects/interface/EcalGainRatios.h"
-#include "CondFormats/EcalObjects/interface/EcalGainRatiosGPU.h"
-#include "CondFormats/EcalObjects/interface/EcalIntercalibConstantsGPU.h"
-#include "CondFormats/EcalObjects/interface/EcalLaserAPDPNRatiosGPU.h"
-#include "CondFormats/EcalObjects/interface/EcalLaserAPDPNRatiosRefGPU.h"
-#include "CondFormats/EcalObjects/interface/EcalLaserAlphasGPU.h"
-#include "CondFormats/EcalObjects/interface/EcalLinearCorrectionsGPU.h"
-#include "CondFormats/EcalObjects/interface/EcalMultifitParametersGPU.h"
+//#include "CondFormats/EcalObjects/interface/EcalGainRatiosGPU.h"
+//#include "CondFormats/EcalObjects/interface/EcalIntercalibConstantsGPU.h"
+//#include "CondFormats/EcalObjects/interface/EcalLaserAPDPNRatiosGPU.h"
+//#include "CondFormats/EcalObjects/interface/EcalLaserAPDPNRatiosRefGPU.h"
+//#include "CondFormats/EcalObjects/interface/EcalLaserAlphasGPU.h"
+//#include "CondFormats/EcalObjects/interface/EcalLinearCorrectionsGPU.h"
+//#include "CondFormats/EcalObjects/interface/EcalMultifitParametersGPU.h"
 #include "CondFormats/EcalObjects/interface/EcalPedestals.h"
-#include "CondFormats/EcalObjects/interface/EcalPedestalsGPU.h"
-#include "CondFormats/EcalObjects/interface/EcalPulseCovariancesGPU.h"
-#include "CondFormats/EcalObjects/interface/EcalPulseShapesGPU.h"
-#include "CondFormats/EcalObjects/interface/EcalRechitADCToGeVConstantGPU.h"
-#include "CondFormats/EcalObjects/interface/EcalRechitChannelStatusGPU.h"
-#include "CondFormats/EcalObjects/interface/EcalSamplesCorrelationGPU.h"
+//#include "CondFormats/EcalObjects/interface/EcalPedestalsGPU.h"
+//#include "CondFormats/EcalObjects/interface/EcalPulseCovariancesGPU.h"
+//#include "CondFormats/EcalObjects/interface/EcalPulseShapesGPU.h"
+//#include "CondFormats/EcalObjects/interface/EcalRechitADCToGeVConstantGPU.h"
+//#include "CondFormats/EcalObjects/interface/EcalRechitChannelStatusGPU.h"
+//#include "CondFormats/EcalObjects/interface/EcalSamplesCorrelationGPU.h"
 #include "CondFormats/EcalObjects/interface/EcalTimeBiasCorrections.h"
-#include "CondFormats/EcalObjects/interface/EcalTimeBiasCorrectionsGPU.h"
-#include "CondFormats/EcalObjects/interface/EcalTimeCalibConstantsGPU.h"
+//#include "CondFormats/EcalObjects/interface/EcalTimeBiasCorrectionsGPU.h"
+//#include "CondFormats/EcalObjects/interface/EcalTimeCalibConstantsGPU.h"
 #include "CondFormats/EcalObjects/interface/EcalTimeOffsetConstant.h"
 #include "CondFormats/EcalObjects/interface/EcalWeightSet.h"
 
@@ -168,17 +164,17 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   
       // const refs products to conditions
       struct ConditionsProducts {
-        EcalPedestalsGPU::Product const& pedestals;
-        EcalGainRatiosGPU::Product const& gainRatios;
-        EcalPulseShapesGPU::Product const& pulseShapes;
-        EcalPulseCovariancesGPU::Product const& pulseCovariances;
-        EcalSamplesCorrelationGPU::Product const& samplesCorrelation;
-        EcalTimeBiasCorrectionsGPU::Product const& timeBiasCorrections;
-        EcalTimeCalibConstantsGPU::Product const& timeCalibConstants;
+        //EcalPedestalsGPU::Product const& pedestals;
+        //EcalGainRatiosGPU::Product const& gainRatios;
+        //EcalPulseShapesGPU::Product const& pulseShapes;
+        //EcalPulseCovariancesGPU::Product const& pulseCovariances;
+        //EcalSamplesCorrelationGPU::Product const& samplesCorrelation;
+        //EcalTimeBiasCorrectionsGPU::Product const& timeBiasCorrections;
+        //EcalTimeCalibConstantsGPU::Product const& timeCalibConstants;
         EcalSampleMask const& sampleMask;
         EcalTimeOffsetConstant const& timeOffsetConstant;
         uint32_t offsetForHashes;
-        EcalMultifitParametersGPU::Product const& multifitParameters;
+        //EcalMultifitParametersGPU::Product const& multifitParameters;
       };
   
       struct xyz {
@@ -231,14 +227,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   
       // const refs products to conditions
       struct ConditionsProducts {
-        EcalRechitADCToGeVConstantGPU::Product const& ADCToGeV;
-        EcalIntercalibConstantsGPU::Product const& Intercalib;
-        EcalRechitChannelStatusGPU::Product const& ChannelStatus;
+        //EcalRechitADCToGeVConstantGPU::Product const& ADCToGeV;
+        //EcalIntercalibConstantsGPU::Product const& Intercalib;
+        //EcalRechitChannelStatusGPU::Product const& ChannelStatus;
   
-        EcalLaserAPDPNRatiosGPU::Product const& LaserAPDPNRatios;
-        EcalLaserAPDPNRatiosRefGPU::Product const& LaserAPDPNRatiosRef;
-        EcalLaserAlphasGPU::Product const& LaserAlphas;
-        EcalLinearCorrectionsGPU::Product const& LinearCorrections;
+        //EcalLaserAPDPNRatiosGPU::Product const& LaserAPDPNRatios;
+        //EcalLaserAPDPNRatiosRefGPU::Product const& LaserAPDPNRatiosRef;
+        //EcalLaserAlphasGPU::Product const& LaserAlphas;
+        //EcalLinearCorrectionsGPU::Product const& LinearCorrections;
   
         uint32_t offsetForHashes;
       };
