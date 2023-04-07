@@ -25,6 +25,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           template <typename TAcc>
           ALPAKA_FN_ACC void operator()(TAcc const &acc, 
                                         double const *weightsdata,
+                                        double const *timeWeightsdata,
                                         DigiPhase2DeviceCollection::ConstView digisDev,
                                         UncalibratedRecHitDeviceCollection::View recHitsDev
                                         ) const;
@@ -32,7 +33,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
       template <typename TAcc>
       ALPAKA_FN_ACC void Phase2WeightsKernel::operator()(TAcc const &acc, 
-                                                        double const *weightsData,                            
+                                                        double const *weightsData,
+                                                        double const *timeWeightsdata,                                                        
                                                         DigiPhase2DeviceCollection::ConstView digisDev,
                                                         UncalibratedRecHitDeviceCollection::View recHitsDev)  
                                                         const{
@@ -46,6 +48,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         }
 
         auto* amplitude = recHitsDev.amplitude();                 // nchannels_per_block elements
+        auto* jitter = recHitsDev.jitter();
         const auto* digis = &digisDev.data()->array;              // nchannels_per_block elements
 
         //unsigned int const threadx = alpaka::getIdx<alpaka::Block, alpaka::Threads>(acc)[0u];
@@ -59,11 +62,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         for (auto tx = first; tx < nchannels; tx += stride) {
           bool g1=false;
           auto const did = DetId{digisDev.id()[tx]};
-          amplitude[tx] = 0;                                                          
+          amplitude[tx] = 0;
+          jitter[tx] = 0;
           for (int sample = 0; sample < nsamples; ++sample) {
             const auto digi = digis[tx][sample];
             amplitude[tx] += ((static_cast<float>(ecalLiteDTU::adc(digi))) * 
                                  ecalPh2::gains[ecalLiteDTU::gainId(digi)] * *(weightsData + sample));
+            jitter[tx] += ((static_cast<float>(ecalLiteDTU::adc(digi))) * 
+                              ecalPh2::gains[ecalLiteDTU::gainId(digi)] * *(timeWeightsdata + sample));
             if (ecalLiteDTU::gainId(digi)== 1)
               g1=true;
             recHitsDev.outOfTimeAmplitudes()[tx].array[sample]= 0.;
@@ -72,9 +78,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           recHitsDev.id()[tx] = did.rawId();
           recHitsDev.flags()[tx] = 0;
           recHitsDev.pedestal()[tx] = 0.; 
-          recHitsDev.jitter()[tx] = 0.;
           recHitsDev.jitterError()[tx] = 0.;
           recHitsDev.chi2()[tx] = 0.;
+          recHitsDev.OOTchi2()[tx]= 0.;
           recHitsDev.aux()[tx] = 0;
           if (g1) {
             recHitsDev.flags()[tx] = 0x1 << EcalUncalibratedRecHit::kHasSwitchToGain1;
@@ -87,11 +93,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       void phase2Weights(ecal::DigiPhase2DeviceCollection const &digis,
                          ecal::UncalibratedRecHitDeviceCollection &recHits,
                          cms::alpakatools::host_buffer<double[]> &weights,
+                         cms::alpakatools::host_buffer<double[]> &timeWeights_,
                          Queue  &queue)
       {
 
-        auto weights_d = make_device_buffer<double[]>(queue,ecalPh2::sampleSize);  
+        auto weights_d = make_device_buffer<double[]>(queue,ecalPh2::sampleSize);
+        auto timeWeights_d = make_device_buffer<double[]>(queue,ecalPh2::sampleSize);
         alpaka::memcpy(queue, weights_d, weights);
+        alpaka::memcpy(queue, timeWeights_d, timeWeights_);
 
         // use 64 items per group (this value is arbitrary, but it's a reasonable starting point)
         uint32_t items = 64;
@@ -100,7 +109,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
         auto workDiv = make_workdiv<Acc1D>(groups, items);
         
-        alpaka::exec<Acc1D>(queue, workDiv, Phase2WeightsKernel{}, weights_d.data(), digis.const_view(),recHits.view()); 
+        alpaka::exec<Acc1D>(queue, workDiv, Phase2WeightsKernel{}, weights_d.data(), timeWeights_d.data(), digis.const_view(),recHits.view()); 
       }
 
     }  // namespace weights

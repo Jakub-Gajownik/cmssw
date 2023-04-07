@@ -33,8 +33,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
     void produce(device::Event &, device::EventSetup const &) override;
 
   private:
-    cms::alpakatools::host_buffer<double[]> weights_;   
-    
+    cms::alpakatools::host_buffer<double[]> weights_;
+    cms::alpakatools::host_buffer<double[]> timeWeights_;   
+   
     using InputProduct = ecal::DigiPhase2DeviceCollection;
     const device::EDGetToken<InputProduct> digisToken_;           //assumed both will be stored on device side    
     using OutputProduct = ecal::UncalibratedRecHitDeviceCollection; 
@@ -44,15 +45,22 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
   // constructor with initialisation of elements
   EcalUncalibRecHitPhase2WeightsProducerGPU::EcalUncalibRecHitPhase2WeightsProducerGPU(const edm::ParameterSet &ps) 
       : weights_{cms::alpakatools::make_host_buffer<double[]>(ecalPh2::sampleSize)},
+        timeWeights_{cms::alpakatools::make_host_buffer<double[]>(ecalPh2::sampleSize)},
         digisToken_{consumes(ps.getParameter<edm::InputTag>("digisLabelEB"))},
         recHitsToken_{produces(ps.getParameter<std::string>("recHitsLabelEB"))} {
     //extracting the weights, for-loop to save them to the buffer even if the size is different than standard
     const auto weights = ps.getParameter<std::vector<double>>("weights");
+    const auto timeWeights = ps.getParameter<std::vector<double>>("timeWeights");
     for (unsigned int i = 0; i < ecalPh2::sampleSize; ++i) {
       if (i < weights.size()){
         weights_[i] = weights[i];
       } else {
         weights_[i]= 0;
+      }
+      if (i < timeWeights.size()){
+        timeWeights_[i] = timeWeights[i];
+      } else {
+        timeWeights_[i] = 0;
       }
     }
   }
@@ -79,7 +87,24 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
                                    -0.121737,
                                    -0.121737,
                                    -0.121737});
-  
+    desc.add<std::vector<double>>("timeWeights",
+                                  {0.429452,
+                                   0.442762,
+                                   0.413327,
+                                   0.858327,
+                                   4.42324,
+                                   2.04369,
+                                   -3.42426,
+                                   -4.16258,
+                                   -2.36061,
+                                   -0.725371,
+                                   0.0727267,
+                                   0.326005,
+                                   0.402035,
+                                   0.404287,
+                                   0.434207,
+                                   0.422775});
+
     desc.add<edm::InputTag>("digisLabelEB", edm::InputTag("simEcalUnsuppressedDigis", ""));
   
     descriptions.addWithDefaultLabel(desc);
@@ -99,7 +124,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
     // do not run the algo if there are no digis
     if (size > 0) {
     //launch the asynchronous work
-    ecal::weights::phase2Weights(digis, recHits, weights_, event.queue());
+    ecal::weights::phase2Weights(digis, recHits, weights_, timeWeights_, event.queue());
     }
     // put into the event
     event.emplace(recHitsToken_, std::move(recHits));
