@@ -66,10 +66,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           jitter[tx] = 0;
           for (int sample = 0; sample < nsamples; ++sample) {
             const auto digi = digis[tx][sample];
-            amplitude[tx] += ((static_cast<float>(ecalLiteDTU::adc(digi))) * 
-                                 ecalPh2::gains[ecalLiteDTU::gainId(digi)] * *(weightsData + sample));
-            jitter[tx] += ((static_cast<float>(ecalLiteDTU::adc(digi))) * 
-                              ecalPh2::gains[ecalLiteDTU::gainId(digi)] * *(timeWeightsdata + sample));
+            const auto trace = (static_cast<float>(ecalLiteDTU::adc(digi))) * ecalPh2::gains[ecalLiteDTU::gainId(digi)];
+            amplitude[tx] += (trace * *(weightsData + sample));
+            jitter[tx] += (trace * *(timeWeightsdata + sample));
             if (ecalLiteDTU::gainId(digi)== 1)
               g1=true;
             recHitsDev.outOfTimeAmplitudes()[tx].array[sample]= 0.;
@@ -80,7 +79,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           recHitsDev.pedestal()[tx] = 0.; 
           recHitsDev.jitterError()[tx] = 0.;
           recHitsDev.chi2()[tx] = 0.;
-          recHitsDev.OOTchi2()[tx]= 0.;
           recHitsDev.aux()[tx] = 0;
           if (g1) {
             recHitsDev.flags()[tx] = 0x1 << EcalUncalibratedRecHit::kHasSwitchToGain1;

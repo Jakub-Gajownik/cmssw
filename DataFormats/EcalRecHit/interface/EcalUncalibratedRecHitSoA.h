@@ -19,7 +19,6 @@ namespace ecal {
     SOA_COLUMN(float, jitter),
     SOA_COLUMN(float, jitterError),
     SOA_COLUMN(float, chi2),
-    SOA_COLUMN(float, OOTchi2),
     SOA_COLUMN(uint32_t, flags),
     SOA_COLUMN(uint32_t, aux),
     SOA_COLUMN(OotAmpArrayStruct, outOfTimeAmplitudes)
