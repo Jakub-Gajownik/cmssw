@@ -1711,7 +1711,7 @@ upgradeWFs['ecalDevelGPU'] = UpgradeWorkflow_ecalDevel(
 )
 
 # ECAL Phase 2 workflow for CPU vs. GPU validation
-upgradeWFs['ecalDevelGPU'] = UpgradeWorkflow_ecalDevel(
+upgradeWFs['ecalDevelGPUValidation'] = UpgradeWorkflow_ecalDevel(
     reco = {'--procModifiers': 'gpuValidation'},
     suffix = '_ecalDevelGPU_Validation',
     offset = 0.613,

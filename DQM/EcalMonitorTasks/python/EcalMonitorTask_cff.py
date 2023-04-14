@@ -14,5 +14,7 @@ gpuValidationEcal.toModify(ecalMonitorTask, workerParameters = dict(GpuTask = ec
 from Configuration.Eras.Modifier_phase2_ecal_devel_cff import phase2_ecal_devel
 phase2_ecal_devel.toModify(ecalGpuTask.params, enableDigi = False)
 phase2_ecal_devel.toModify(ecalGpuTask.params, enableRecHit = False)
+phase2_ecal_devel.toModify(ecalMonitorTask.collectionTags, EBUncalibRecHit = "ecalUncalibRecHitPhase2:EcalUncalibRecHitsEB")
+phase2_ecal_devel.toModify(ecalMonitorTask.collectionTags, EBLaserLedUncalibRecHit = "ecalUncalibRecHitPhase2:EcalUncalibRecHitsEB")
 phase2_ecal_devel.toModify(ecalMonitorTask.collectionTags, EBCpuUncalibRecHit = "ecalUncalibRecHitPhase2@cpu:EcalUncalibRecHitsEB")
 phase2_ecal_devel.toModify(ecalMonitorTask.collectionTags, EBGpuUncalibRecHit = "ecalUncalibRecHitPhase2@cuda:EcalUncalibRecHitsEB")
