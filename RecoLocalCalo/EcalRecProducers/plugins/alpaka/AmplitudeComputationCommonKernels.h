@@ -360,8 +360,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
                                         DigiDeviceCollection::ConstView digisDevEB,
-                                        DigiDeviceCollection::ConstView digisDevEE,
-                                        int const nchannels) const {
+                                        DigiDeviceCollection::ConstView digisDevEE) const {
 
       //__global__ void kernel_prep_2d(SampleGainVector const* gainNoise,
       //                               uint32_t const* dids_eb,

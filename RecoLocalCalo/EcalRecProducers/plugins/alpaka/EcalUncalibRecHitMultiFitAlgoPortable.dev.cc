@@ -20,7 +20,7 @@
 #include "AmplitudeComputationCommonKernels.h"
 #include "AmplitudeComputationKernels.h"
 #include "EcalUncalibRecHitMultiFitAlgoPortable.h"
-//#include "TimeComputationKernels.h"
+#include "TimeComputationKernels.h"
 
 //#define DEBUG
 //#define ECAL_RECO_CUDA_DEBUG
@@ -59,14 +59,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         // 1d preparation kernel
         //
         uint32_t const nchannels_per_block = 32;
-        auto const threads_1d = 10 * nchannels_per_block;
-        auto const blocks_1d = threads_1d > 10 * totalChannels ? 1u : (totalChannels * 10 + threads_1d - 1) / threads_1d;
+        auto const threads_1d = EcalDataFrame::MAXSAMPLES * nchannels_per_block;
+        auto const blocks_1d = threads_1d > EcalDataFrame::MAXSAMPLES * totalChannels ? 1u : (totalChannels * EcalDataFrame::MAXSAMPLES + threads_1d - 1) / threads_1d;
       //  int shared_bytes = nchannels_per_block * EcalDataFrame::MAXSAMPLES *
       //                     (sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(char) + sizeof(bool));
         auto workDivPrep1D = cms::alpakatools::make_workdiv<Acc1D>(blocks_1d, threads_1d);
         alpaka::exec<Acc1D>(queue,
-		            workDivPrep1D,
-			    kernel_prep_1d_and_initialize{},
+                            workDivPrep1D,
+                            kernel_prep_1d_and_initialize{},
                             digisDevEB.const_view(),
                             digisDevEE.const_view(),
                             uncalibRecHitsDevEB.view(),
@@ -76,9 +76,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         //
         // 2d preparation kernel
         //
-        auto const blocks_2d = totalChannels;
-      //  dim3 threads_2d{10, 10};
-      //  auto workDivPrep2D = cms::alpakatools::make_workdiv<Acc2D>(blocks_2d, threads_2d);
+        Vec2D const blocks_2d{totalChannels, 1u};
+        Vec2D const threads_2d{EcalDataFrame::MAXSAMPLES, EcalDataFrame::MAXSAMPLES};
+        auto workDivPrep2D = cms::alpakatools::make_workdiv<Acc2D>(blocks_2d, threads_2d);
+        alpaka::exec<Acc2D>(queue,
+                            workDivPrep2D,
+                            kernel_prep_2d{},
+                            digisDevEB.const_view(),
+                            digisDevEE.const_view());
       //  kernel_prep_2d<<<blocks_2d, threads_2d, 0, cudaStream>>>((SampleGainVector*)scratch.gainsNoise.get(),
       //                                                           eventInputGPU.ebDigis.ids.get(),
       //                                                           eventInputGPU.eeDigis.ids.get(),
@@ -106,14 +111,20 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //  // run minimization kernels
       //  v1::minimization_procedure(eventInputGPU, eventOutputGPU, scratch, conditions, configParameters, cudaStream);
   
-      //  if (configParameters.shouldRunTimingComputation) {
-      //    //
-      //    // TODO: this guy can run concurrently with other kernels,
-      //    // there is no dependence on the order of execution
-      //    //
-      //    unsigned int threads_time_init = threads_1d;
-      //    unsigned int blocks_time_init = blocks_1d;
-      //    int sharedBytesInit = 2 * threads_time_init * sizeof(SampleVector::Scalar);
+        if (configParams.shouldRunTimingComputation) {
+          //
+          // TODO: this guy can run concurrently with other kernels,
+          // there is no dependence on the order of execution
+          //
+          auto const blocks_time_init = blocks_1d;
+          auto const threads_time_init = threads_1d;
+          auto workDivTimeCompInit1D = cms::alpakatools::make_workdiv<Acc1D>(blocks_time_init, threads_time_init);
+          alpaka::exec<Acc1D>(queue,
+                              workDivTimeCompInit1D,
+                              kernel_time_computation_init{},
+                              digisDevEB.const_view(),
+                              digisDevEE.const_view());
+           //int sharedBytesInit = 2 * threads_time_init * sizeof(SampleVector::Scalar);
       //    kernel_time_computation_init<<<blocks_time_init, threads_time_init, sharedBytesInit, cudaStream>>>(
       //        eventInputGPU.ebDigis.data.get(),
       //        eventInputGPU.ebDigis.ids.get(),
@@ -139,17 +150,23 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //        totalChannels);
       //    cudaCheck(cudaGetLastError());
   
-      //    //
-      //    // TODO: small kernel only for EB. It needs to be checked if
-      //    /// fusing such small kernels is beneficial in here
-      //    //
-      //    // we are running only over EB digis
-      //    // therefore we need to create threads/blocks only for that
-      //    unsigned int const threadsFixMGPA = threads_1d;
-      //    unsigned int const blocksFixMGPA =
-      //        threadsFixMGPA > 10 * eventInputGPU.ebDigis.size
-      //            ? 1
-      //            : (10 * eventInputGPU.ebDigis.size + threadsFixMGPA - 1) / threadsFixMGPA;
+          //
+          // TODO: small kernel only for EB. It needs to be checked if
+          /// fusing such small kernels is beneficial in here
+          //
+          // we are running only over EB digis
+          // therefore we need to create threads/blocks only for that
+          auto const threadsFixMGPA = threads_1d;
+          auto const blocksFixMGPA =
+              threadsFixMGPA > EcalDataFrame::MAXSAMPLES * static_cast<unsigned int>(digisDevEB->metadata().size()) // TODO check if metadata.size is OK here
+                  ? 1
+                  : (EcalDataFrame::MAXSAMPLES * static_cast<unsigned int>(digisDevEB->metadata().size()) + threadsFixMGPA - 1) / threadsFixMGPA;
+          auto workDivTimeFixMGPAslew1D = cms::alpakatools::make_workdiv<Acc1D>(blocksFixMGPA, threadsFixMGPA);
+          alpaka::exec<Acc1D>(queue,
+                              workDivTimeFixMGPAslew1D,
+                              kernel_time_compute_fixMGPAslew{},
+                              digisDevEB.const_view(),
+                              digisDevEE.const_view());
       //    kernel_time_compute_fixMGPAslew<<<blocksFixMGPA, threadsFixMGPA, 0, cudaStream>>>(
       //        eventInputGPU.ebDigis.data.get(),
       //        eventInputGPU.eeDigis.data.get(),
@@ -162,8 +179,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //    cudaCheck(cudaGetLastError());
   
       //    int sharedBytes = EcalDataFrame::MAXSAMPLES * nchannels_per_block * 4 * sizeof(SampleVector::Scalar);
-      //    auto const threads_nullhypot = threads_1d;
-      //    auto const blocks_nullhypot = blocks_1d;
+          auto const threads_nullhypot = threads_1d;
+          auto const blocks_nullhypot = blocks_1d;
+          auto workDivTimeNullhypot1D = cms::alpakatools::make_workdiv<Acc1D>(blocks_nullhypot, threads_nullhypot);
+          alpaka::exec<Acc1D>(queue,
+                              workDivTimeNullhypot1D,
+                              kernel_time_compute_nullhypot{});
       //    kernel_time_compute_nullhypot<<<blocks_nullhypot, threads_nullhypot, sharedBytes, cudaStream>>>(
       //        scratch.sample_values.get(),
       //        scratch.sample_value_errors.get(),
@@ -174,12 +195,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //        totalChannels);
       //    cudaCheck(cudaGetLastError());
   
-      //    unsigned int nchannels_per_block_makeratio = 10;
-      //    unsigned int threads_makeratio = 45 * nchannels_per_block_makeratio;
-      //    unsigned int blocks_makeratio = threads_makeratio > 45 * totalChannels
-      //                                        ? 1
-      //                                        : (totalChannels * 45 + threads_makeratio - 1) / threads_makeratio;
+          unsigned int const nchannels_per_block_makeratio = 10;
+          auto const threads_makeratio = 45 * nchannels_per_block_makeratio;
+          unsigned int const blocks_makeratio = threads_makeratio > 45 * totalChannels
+                                              ? 1
+                                              : (totalChannels * 45 + threads_makeratio - 1) / threads_makeratio;
       //    int sharedBytesMakeRatio = 5 * threads_makeratio * sizeof(SampleVector::Scalar);
+          auto workDivTimeMakeRatio1D = cms::alpakatools::make_workdiv<Acc1D>(blocks_makeratio, threads_makeratio);
+          alpaka::exec<Acc1D>(queue,
+                              workDivTimeMakeRatio1D,
+                              kernel_time_compute_makeratio{},
+                              digisDevEB.const_view(),
+                              digisDevEE.const_view());
       //    kernel_time_compute_makeratio<<<blocks_makeratio, threads_makeratio, sharedBytesMakeRatio, cudaStream>>>(
       //        scratch.sample_values.get(),
       //        scratch.sample_value_errors.get(),
@@ -208,9 +235,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //        offsetForInputs);
       //    cudaCheck(cudaGetLastError());
   
-      //    auto const threads_findamplchi2 = threads_1d;
-      //    auto const blocks_findamplchi2 = blocks_1d;
+          auto const threads_findamplchi2 = threads_1d;
+          auto const blocks_findamplchi2 = blocks_1d;
       //    int const sharedBytesFindAmplChi2 = 2 * threads_findamplchi2 * sizeof(SampleVector::Scalar);
+          auto workDivTimeFindAmplChi21D = cms::alpakatools::make_workdiv<Acc1D>(blocks_findamplchi2, threads_findamplchi2);
+          alpaka::exec<Acc1D>(queue,
+                              workDivTimeFindAmplChi21D,
+                              kernel_time_compute_findamplchi2_and_finish{},
+                              digisDevEB.const_view(),
+                              digisDevEE.const_view());
       //    kernel_time_compute_findamplchi2_and_finish<<<blocks_findamplchi2,
       //                                                  threads_findamplchi2,
       //                                                  sharedBytesFindAmplChi2,
@@ -237,9 +270,17 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //                                                                offsetForInputs);
       //    cudaCheck(cudaGetLastError());
   
-      //    auto const threads_timecorr = 32;
-      //    auto const blocks_timecorr =
-      //        threads_timecorr > totalChannels ? 1 : (totalChannels + threads_timecorr - 1) / threads_timecorr;
+          auto const threads_timecorr = 32;
+          auto const blocks_timecorr =
+              threads_timecorr > totalChannels ? 1 : (totalChannels + threads_timecorr - 1) / threads_timecorr;
+          auto workDivCorrFinal1D = cms::alpakatools::make_workdiv<Acc1D>(blocks_timecorr, threads_timecorr);
+          alpaka::exec<Acc1D>(queue,
+                              workDivCorrFinal1D,
+                              kernel_time_correction_and_finalize{},
+                              digisDevEB.const_view(),
+                              digisDevEE.const_view(),
+                              uncalibRecHitsDevEB.view(),
+                              uncalibRecHitsDevEE.view());
       //    kernel_time_correction_and_finalize<<<blocks_timecorr, threads_timecorr, 0, cudaStream>>>(
       //        eventOutputGPU.recHitsEB.amplitude.get(),
       //        eventOutputGPU.recHitsEE.amplitude.get(),
@@ -283,7 +324,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //        offsetForInputs,
       //        totalChannels);
       //    cudaCheck(cudaGetLastError());
-      //  }
+        }
       }
   
     }  // namespace multifit

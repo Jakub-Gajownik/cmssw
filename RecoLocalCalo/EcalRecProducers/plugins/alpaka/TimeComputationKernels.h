@@ -36,8 +36,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       class kernel_time_compute_nullhypot {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
-          ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        int const nchannels) const {
+          ALPAKA_FN_ACC void operator()(TAcc const& acc) const {
 
       //__global__ void kernel_time_compute_nullhypot(SampleVector::Scalar const* sample_values,
       //                                              SampleVector::Scalar const* sample_value_errors,
@@ -107,11 +106,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //    sum0s[ch] = sum0;
       //    sumAAs[ch] = sumAA;
   
-  #ifd//ef DEBUG_TC_NULLHYPOT
+  //#ifdef DEBUG_TC_NULLHYPOT
       //    if (ch == 0) {
       //      printf("chi2 = %f sum0 = %d sumAA = %f\n", chi2, static_cast<int>(sum0), sumAA);
       //    }
-  #end//if
+ // #endif
       //  }
       //}
           }
@@ -128,7 +127,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        int const nchannels) const {
+                                        DigiDeviceCollection::ConstView digisDevEB,
+                                        DigiDeviceCollection::ConstView digisDevEE) const {
 
 //      __global__ void kernel_time_compute_makeratio(SampleVector::Scalar const* sample_values,
 //                                                    SampleVector::Scalar const* sample_value_errors,
@@ -493,7 +493,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        int const nchannels) const {
+                                        DigiDeviceCollection::ConstView digisDevEB,
+                                        DigiDeviceCollection::ConstView digisDevEE) const {
 
       /// launch ctx parameters are
       /// 10 threads per channel, N channels per block, Y blocks
@@ -699,7 +700,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        int const nchannels) const {
+                                        DigiDeviceCollection::ConstView digisDevEB,
+                                        DigiDeviceCollection::ConstView digisDevEE) const { // FIXME EE needed?
 
 //      __global__ void kernel_time_compute_fixMGPAslew(uint16_t const* digis_eb,
 //                                                      uint16_t const* digis_ee,
@@ -847,7 +849,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        int const nchannels) const {
+                                        DigiDeviceCollection::ConstView digisDevEB,
+                                        DigiDeviceCollection::ConstView digisDevEE) const {
 
 //      __global__ void kernel_time_computation_init(uint16_t const* digis_eb,
 //                                                   uint32_t const* dids_eb,
@@ -1033,7 +1036,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        int const nchannels) const {
+                                        DigiDeviceCollection::ConstView digisDevEB,
+                                        DigiDeviceCollection::ConstView digisDevEE,
+                                        UncalibratedRecHitDeviceCollection::View uncalibRecHitsEB,
+                                        UncalibratedRecHitDeviceCollection::View uncalibRecHitsEE) const {
 
 //      __global__ void kernel_time_correction_and_finalize(
 //          //        SampleVector::Scalar const* g_amplitude,
