@@ -19,7 +19,6 @@
 #include "DataFormats/EcalDigi/interface/EcalDigiPhase2HostCollection.h"
 #include "DataFormats/EcalRecHit/interface/EcalUncalibratedRecHitHostCollection.h"
 #include "DataFormats/EcalRecHit/interface/alpaka/EcalUncalibratedRecHitDeviceCollection.h"
-#include "DataFormats/Portable/interface/Product.h" 
 
 #include "EcalUncalibRecHitPhase2WeightsAlgoGPU.h"
 

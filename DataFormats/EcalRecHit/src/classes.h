@@ -14,6 +14,5 @@
 #include "DataFormats/Common/interface/DetSetVector.h"
 #include "DataFormats/EcalRecHit/interface/EcalRecHitComparison.h"
 
-#include "DataFormats/Portable/interface/Product.h"
 #include "DataFormats/EcalRecHit/interface/EcalUncalibratedRecHitHostCollection.h"
 #include "DataFormats/EcalRecHit/interface/EcalUncalibratedRecHitSoA.h"

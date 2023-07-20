@@ -12,7 +12,6 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/Event.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/EventSetup.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
-#include "HeterogeneousCore/AlpakaCore/interface/ScopedContext.h"
 
 #include <alpaka/alpaka.hpp>
 
