@@ -23,7 +23,7 @@
 #include "TimeComputationKernels.h"
 
 //#define DEBUG
-//#define ECAL_RECO_CUDA_DEBUG
+//#define ECAL_RECO_ALPAKA_DEBUG
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
@@ -48,18 +48,21 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //                cudaStream_t cudaStream) {
         using digis_type = std::vector<uint16_t>;
         using dids_type = std::vector<uint32_t>;
-        // accodring to the cpu setup  //----> hardcoded
-        bool const gainSwitchUseMaxSampleEB = true;
-        // accodring to the cpu setup  //----> hardcoded
-        bool const gainSwitchUseMaxSampleEE = false;
-  
+        // according to the cpu setup  //----> hardcoded
+        bool constexpr gainSwitchUseMaxSampleEB = true;
+        // according to the cpu setup  //----> hardcoded
+        bool constexpr gainSwitchUseMaxSampleEE = false;
+
         auto const totalChannels = static_cast<uint32_t>(digisDevEB->metadata().size() + digisDevEE->metadata().size());
+
+        EventDataForScratchGPU eventDataForScratchGPU;
+        eventDataForScratchGPU.allocate(configParams, totalChannels, queue);
 
         //
         // 1d preparation kernel
         //
-        uint32_t const nchannels_per_block = 32;
-        auto const threads_1d = EcalDataFrame::MAXSAMPLES * nchannels_per_block;
+        uint32_t constexpr nchannels_per_block = 32;
+        auto constexpr threads_1d = EcalDataFrame::MAXSAMPLES * nchannels_per_block;
         auto const blocks_1d = threads_1d > EcalDataFrame::MAXSAMPLES * totalChannels ? 1u : (totalChannels * EcalDataFrame::MAXSAMPLES + threads_1d - 1) / threads_1d;
       //  int shared_bytes = nchannels_per_block * EcalDataFrame::MAXSAMPLES *
       //                     (sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(char) + sizeof(bool));
@@ -71,8 +74,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                             digisDevEE.const_view(),
                             uncalibRecHitsDevEB.view(),
                             uncalibRecHitsDevEE.view(),
-                            conditionsDev.const_view());
-  
+                            conditionsDev.const_view(),
+                            (::ecal::multifit::SampleVector*)eventDataForScratchGPU.samplesDevBuf.value().data(),
+                            (::ecal::multifit::SampleGainVector*)eventDataForScratchGPU.gainsNoiseDevBuf.value().data(),
+                            eventDataForScratchGPU.hasSwitchToGain6DevBuf.value().data(),
+                            eventDataForScratchGPU.hasSwitchToGain1DevBuf.value().data(),
+                            eventDataForScratchGPU.isSaturatedDevBuf.value().data(),
+                            eventDataForScratchGPU.acStateDevBuf.value().data(),
+                            (::ecal::multifit::BXVectorType*)eventDataForScratchGPU.activeBXsDevBuf.value().data(),
+                            gainSwitchUseMaxSampleEB,
+                            gainSwitchUseMaxSampleEE
+                           );
+
         //
         // 2d preparation kernel
         //
@@ -107,10 +120,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //                                                           offsetForHashes,
       //                                                           offsetForInputs);
       //  cudaCheck(cudaGetLastError());
-  
+ 
       //  // run minimization kernels
       //  v1::minimization_procedure(eventInputGPU, eventOutputGPU, scratch, conditions, configParameters, cudaStream);
-  
+ 
         if (configParams.shouldRunTimingComputation) {
           //
           // TODO: this guy can run concurrently with other kernels,
@@ -149,7 +162,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //        conditions.sampleMask.getEcalSampleMaskRecordEE(),
       //        totalChannels);
       //    cudaCheck(cudaGetLastError());
-  
+ 
           //
           // TODO: small kernel only for EB. It needs to be checked if
           /// fusing such small kernels is beneficial in here
@@ -177,7 +190,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //        totalChannels,
       //        offsetForInputs);
       //    cudaCheck(cudaGetLastError());
-  
+ 
       //    int sharedBytes = EcalDataFrame::MAXSAMPLES * nchannels_per_block * 4 * sizeof(SampleVector::Scalar);
           auto const threads_nullhypot = threads_1d;
           auto const blocks_nullhypot = blocks_1d;
@@ -194,7 +207,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //        scratch.sumAAsNullHypot.get(),
       //        totalChannels);
       //    cudaCheck(cudaGetLastError());
-  
+ 
           unsigned int const nchannels_per_block_makeratio = 10;
           auto const threads_makeratio = 45 * nchannels_per_block_makeratio;
           unsigned int const blocks_makeratio = threads_makeratio > 45 * totalChannels
@@ -234,7 +247,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //        totalChannels,
       //        offsetForInputs);
       //    cudaCheck(cudaGetLastError());
-  
+ 
           auto const threads_findamplchi2 = threads_1d;
           auto const blocks_findamplchi2 = blocks_1d;
       //    int const sharedBytesFindAmplChi2 = 2 * threads_findamplchi2 * sizeof(SampleVector::Scalar);
@@ -269,7 +282,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //                                                                totalChannels,
       //                                                                offsetForInputs);
       //    cudaCheck(cudaGetLastError());
-  
+ 
           auto const threads_timecorr = 32;
           auto const blocks_timecorr =
               threads_timecorr > totalChannels ? 1 : (totalChannels + threads_timecorr - 1) / threads_timecorr;
@@ -326,7 +339,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       //    cudaCheck(cudaGetLastError());
         }
       }
-  
+ 
     }  // namespace multifit
   }  // namespace ecal
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

@@ -11,7 +11,6 @@
 
 struct EcalPulseShape;
 struct EcalPulseCovariance;
-struct EcalUncalibratedRecHit;
   
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
