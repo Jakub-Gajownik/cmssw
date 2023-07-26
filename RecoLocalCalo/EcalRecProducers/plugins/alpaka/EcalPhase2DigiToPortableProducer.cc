@@ -11,10 +11,10 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
-  class EcalPhase2DigiToGPUProducer : public stream::EDProducer<> {
+  class EcalPhase2DigiToPortableProducer : public stream::EDProducer<> {
   public:
-    explicit EcalPhase2DigiToGPUProducer(edm::ParameterSet const &ps);
-    ~EcalPhase2DigiToGPUProducer() override = default;
+    explicit EcalPhase2DigiToPortableProducer(edm::ParameterSet const &ps);
+    ~EcalPhase2DigiToPortableProducer() override = default;
     static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
     void produce(device::Event &event, device::EventSetup const &setup) override;
@@ -24,7 +24,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     const device::EDPutToken<ecal::DigiPhase2DeviceCollection> outputDigiDevToken_;
   };
 
-  void EcalPhase2DigiToGPUProducer::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
+  void EcalPhase2DigiToPortableProducer::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
     edm::ParameterSetDescription desc;
 
     desc.add<edm::InputTag>("BarrelDigis", edm::InputTag("simEcalUnsuppressedDigis", ""));
@@ -33,18 +33,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     descriptions.addWithDefaultLabel(desc);
   }
 
-  EcalPhase2DigiToGPUProducer::EcalPhase2DigiToGPUProducer(edm::ParameterSet const &ps)
+  EcalPhase2DigiToPortableProducer::EcalPhase2DigiToPortableProducer(edm::ParameterSet const &ps)
       : inputDigiToken_(consumes<EBDigiCollectionPh2>(ps.getParameter<edm::InputTag>("BarrelDigis"))),
         outputDigiDevToken_(produces(ps.getParameter<std::string>("digisLabelEB"))) {}
 
-  void EcalPhase2DigiToGPUProducer::produce(device::Event &event, device::EventSetup const &setup) {
+  void EcalPhase2DigiToPortableProducer::produce(device::Event &event, device::EventSetup const &setup) {
     
     //input data from event
     const auto &inputDigis = event.get(inputDigiToken_);
 
     const uint32_t size = inputDigis.size();
 
-    //create host and device collections of desired size
+    //create host and device Digi collections of required size
     ecal::DigiPhase2DeviceCollection DigisDevColl{static_cast<int32_t>(size), event.queue()};
     ecal::DigiPhase2HostCollection DigisHostColl{static_cast<int32_t>(size), event.queue()};  
     auto DigisHostCollView = DigisHostColl.view();
@@ -74,4 +74,4 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   }
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
 
-DEFINE_FWK_ALPAKA_MODULE(EcalPhase2DigiToGPUProducer);
+DEFINE_FWK_ALPAKA_MODULE(EcalPhase2DigiToPortableProducer);

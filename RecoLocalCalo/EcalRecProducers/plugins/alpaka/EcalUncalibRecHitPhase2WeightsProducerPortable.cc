@@ -21,13 +21,13 @@
 #include "DataFormats/EcalRecHit/interface/alpaka/EcalUncalibratedRecHitDeviceCollection.h"
 #include "DataFormats/Portable/interface/Product.h" 
 
-#include "EcalUncalibRecHitPhase2WeightsAlgoGPU.h"
+#include "EcalUncalibRecHitPhase2WeightsAlgoPortable.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE{
-  class EcalUncalibRecHitPhase2WeightsProducerGPU : public stream::EDProducer<> {
+  class EcalUncalibRecHitPhase2WeightsProducerPortable : public stream::EDProducer<> {
   public:
-    explicit EcalUncalibRecHitPhase2WeightsProducerGPU(edm::ParameterSet const &ps);
-    ~EcalUncalibRecHitPhase2WeightsProducerGPU() override = default;
+    explicit EcalUncalibRecHitPhase2WeightsProducerPortable(edm::ParameterSet const &ps);
+    ~EcalUncalibRecHitPhase2WeightsProducerPortable() override = default;
     static void fillDescriptions(edm::ConfigurationDescriptions &);
 
     void produce(device::Event &, device::EventSetup const &) override;
@@ -37,13 +37,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
     cms::alpakatools::host_buffer<double[]> timeWeights_;   
    
     using InputProduct = ecal::DigiPhase2DeviceCollection;
-    const device::EDGetToken<InputProduct> digisToken_;           //assumed both will be stored on device side    
+    const device::EDGetToken<InputProduct> digisToken_;           //both tokens stored on the device    
     using OutputProduct = ecal::UncalibratedRecHitDeviceCollection; 
     const device::EDPutToken<OutputProduct> recHitsToken_;
   };
 
   // constructor with initialisation of elements
-  EcalUncalibRecHitPhase2WeightsProducerGPU::EcalUncalibRecHitPhase2WeightsProducerGPU(const edm::ParameterSet &ps) 
+  EcalUncalibRecHitPhase2WeightsProducerPortable::EcalUncalibRecHitPhase2WeightsProducerPortable(const edm::ParameterSet &ps) 
       : weights_{cms::alpakatools::make_host_buffer<double[]>(ecalPh2::sampleSize)},
         timeWeights_{cms::alpakatools::make_host_buffer<double[]>(ecalPh2::sampleSize)},
         digisToken_{consumes(ps.getParameter<edm::InputTag>("digisLabelEB"))},
@@ -65,7 +65,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
     }
   }
   
-  void EcalUncalibRecHitPhase2WeightsProducerGPU::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
+  void EcalUncalibRecHitPhase2WeightsProducerPortable::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
     edm::ParameterSetDescription desc;
   
     desc.add<std::string>("recHitsLabelEB", "EcalUncalibRecHitsEB");
@@ -110,25 +110,25 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
     descriptions.addWithDefaultLabel(desc);
   }
 
-  void EcalUncalibRecHitPhase2WeightsProducerGPU::produce(device::Event &event, const device::EventSetup &setup) {
+  void EcalUncalibRecHitPhase2WeightsProducerPortable::produce(device::Event &event, const device::EventSetup &setup) {
 
-    // device collection of digis products
+    //get the device collection of digis 
     auto const &digis = event.get(digisToken_);
 
     //get size of digis
     const uint32_t size = digis->metadata().size();
 
-    //allocate product of queue on the device
+    //allocate output product on the device
     OutputProduct recHits{static_cast<int32_t>(size), event.queue()};
   
-    // do not run the algo if there are no digis
+    //do not run the algo if there are no digis
     if (size > 0) {
     //launch the asynchronous work
     ecal::weights::phase2Weights(digis, recHits, weights_, timeWeights_, event.queue());
     }
-    // put into the event
+    //put the output collection into the event
     event.emplace(recHitsToken_, std::move(recHits));
   }
 
 } //namespace ALPAKA_ACCELERATOR_NAMESPACE
-DEFINE_FWK_ALPAKA_MODULE(EcalUncalibRecHitPhase2WeightsProducerGPU);
+DEFINE_FWK_ALPAKA_MODULE(EcalUncalibRecHitPhase2WeightsProducerPortable);
