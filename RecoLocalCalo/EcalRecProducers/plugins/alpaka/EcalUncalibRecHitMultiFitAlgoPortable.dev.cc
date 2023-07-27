@@ -6,15 +6,6 @@
 #include <limits>
 #include <alpaka/alpaka.hpp>
 
-//#include "CondFormats/EcalObjects/interface/EcalMGPAGainRatio.h"
-//#include "CondFormats/EcalObjects/interface/EcalPedestals.h"
-//#include "CondFormats/EcalObjects/interface/EcalPulseCovariances.h"
-//#include "CondFormats/EcalObjects/interface/EcalPulseShapes.h"
-//#include "CondFormats/EcalObjects/interface/EcalSampleMask.h"
-//#include "CondFormats/EcalObjects/interface/EcalSamplesCorrelation.h"
-//#include "CondFormats/EcalObjects/interface/EcalXtalGroupId.h"
-//#include "DataFormats/EcalDigi/interface/EcalDataFrame.h"
-//#include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/workdivision.h"
 
 #include "AmplitudeComputationCommonKernels.h"
@@ -39,13 +30,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                       EcalMultifitConditionsPortableDevice const& conditionsDev,
                       ConfigurationParameters const& configParams,
                       Queue& queue) {
-  
-      //void entryPoint(EventInputDataGPU const& eventInputGPU,
-      //                EventOutputDataGPU& eventOutputGPU,
-      //                EventDataForScratchGPU& scratch,
-      //                ConditionsProducts const& conditions,
-      //                ConfigurationParameters const& configParameters,
-      //                cudaStream_t cudaStream) {
         using digis_type = std::vector<uint16_t>;
         using dids_type = std::vector<uint32_t>;
         // according to the cpu setup  //----> hardcoded
@@ -53,10 +37,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         // according to the cpu setup  //----> hardcoded
         bool constexpr gainSwitchUseMaxSampleEE = false;
 
-        auto const totalChannels = static_cast<uint32_t>(digisDevEB->metadata().size() + digisDevEE->metadata().size());
+        auto const totalChannels = static_cast<uint32_t>(digisDevEB->metadata().size() + digisDevEE->metadata().size()); // FIXME: actual size
 
-        EventDataForScratchGPU eventDataForScratchGPU;
-        eventDataForScratchGPU.allocate(configParams, totalChannels, queue);
+        EventDataForScratchGPU scratch;
+        scratch.allocate(configParams, totalChannels, queue);
 
         //
         // 1d preparation kernel
@@ -64,8 +48,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         uint32_t constexpr nchannels_per_block = 32;
         auto constexpr threads_1d = EcalDataFrame::MAXSAMPLES * nchannels_per_block;
         auto const blocks_1d = threads_1d > EcalDataFrame::MAXSAMPLES * totalChannels ? 1u : (totalChannels * EcalDataFrame::MAXSAMPLES + threads_1d - 1) / threads_1d;
-      //  int shared_bytes = nchannels_per_block * EcalDataFrame::MAXSAMPLES *
-      //                     (sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(char) + sizeof(bool));
         auto workDivPrep1D = cms::alpakatools::make_workdiv<Acc1D>(blocks_1d, threads_1d);
         alpaka::exec<Acc1D>(queue,
                             workDivPrep1D,
@@ -75,13 +57,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                             uncalibRecHitsDevEB.view(),
                             uncalibRecHitsDevEE.view(),
                             conditionsDev.const_view(),
-                            (::ecal::multifit::SampleVector*)eventDataForScratchGPU.samplesDevBuf.value().data(),
-                            (::ecal::multifit::SampleGainVector*)eventDataForScratchGPU.gainsNoiseDevBuf.value().data(),
-                            eventDataForScratchGPU.hasSwitchToGain6DevBuf.value().data(),
-                            eventDataForScratchGPU.hasSwitchToGain1DevBuf.value().data(),
-                            eventDataForScratchGPU.isSaturatedDevBuf.value().data(),
-                            eventDataForScratchGPU.acStateDevBuf.value().data(),
-                            (::ecal::multifit::BXVectorType*)eventDataForScratchGPU.activeBXsDevBuf.value().data(),
+                            reinterpret_cast<::ecal::multifit::SampleVector*>(scratch.samplesDevBuf.value().data()),
+                            reinterpret_cast<::ecal::multifit::SampleGainVector*>(scratch.gainsNoiseDevBuf.value().data()),
+                            scratch.hasSwitchToGain6DevBuf.value().data(),
+                            scratch.hasSwitchToGain1DevBuf.value().data(),
+                            scratch.isSaturatedDevBuf.value().data(),
+                            scratch.acStateDevBuf.value().data(),
+                            reinterpret_cast<::ecal::multifit::BXVectorType*>(scratch.activeBXsDevBuf.value().data()),
                             gainSwitchUseMaxSampleEB,
                             gainSwitchUseMaxSampleEE
                            );
@@ -96,34 +78,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                             workDivPrep2D,
                             kernel_prep_2d{},
                             digisDevEB.const_view(),
-                            digisDevEE.const_view());
-      //  kernel_prep_2d<<<blocks_2d, threads_2d, 0, cudaStream>>>((SampleGainVector*)scratch.gainsNoise.get(),
-      //                                                           eventInputGPU.ebDigis.ids.get(),
-      //                                                           eventInputGPU.eeDigis.ids.get(),
-      //                                                           conditions.pedestals.rms_x12,
-      //                                                           conditions.pedestals.rms_x6,
-      //                                                           conditions.pedestals.rms_x1,
-      //                                                           conditions.gainRatios.gain12Over6,
-      //                                                           conditions.gainRatios.gain6Over1,
-      //                                                           conditions.samplesCorrelation.EBG12SamplesCorrelation,
-      //                                                           conditions.samplesCorrelation.EBG6SamplesCorrelation,
-      //                                                           conditions.samplesCorrelation.EBG1SamplesCorrelation,
-      //                                                           conditions.samplesCorrelation.EEG12SamplesCorrelation,
-      //                                                           conditions.samplesCorrelation.EEG6SamplesCorrelation,
-      //                                                           conditions.samplesCorrelation.EEG1SamplesCorrelation,
-      //                                                           (SampleMatrix*)scratch.noisecov.get(),
-      //                                                           (PulseMatrixType*)scratch.pulse_matrix.get(),
-      //                                                           conditions.pulseShapes.values,
-      //                                                           scratch.hasSwitchToGain6.get(),
-      //                                                           scratch.hasSwitchToGain1.get(),
-      //                                                           scratch.isSaturated.get(),
-      //                                                           offsetForHashes,
-      //                                                           offsetForInputs);
-      //  cudaCheck(cudaGetLastError());
- 
-      //  // run minimization kernels
-      //  v1::minimization_procedure(eventInputGPU, eventOutputGPU, scratch, conditions, configParameters, cudaStream);
- 
+                            digisDevEE.const_view(),
+                            conditionsDev.const_view(),
+                            reinterpret_cast<::ecal::multifit::SampleGainVector*>(scratch.gainsNoiseDevBuf.value().data()),
+                            reinterpret_cast<::ecal::multifit::SampleMatrix*>(scratch.noisecovDevBuf.value().data()),
+                            reinterpret_cast<::ecal::multifit::PulseMatrixType*>(scratch.pulse_matrixDevBuf.value().data()),
+                            scratch.hasSwitchToGain6DevBuf.value().data(),
+                            scratch.hasSwitchToGain1DevBuf.value().data(),
+                            scratch.isSaturatedDevBuf.value().data());
+
+        // run minimization kernels
+        v1::minimization_procedure(digisDevEB, digisDevEE, uncalibRecHitsDevEB, uncalibRecHitsDevEE, scratch, conditionsDev, configParams, queue);
+
         if (configParams.shouldRunTimingComputation) {
           //
           // TODO: this guy can run concurrently with other kernels,
@@ -136,33 +102,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                               workDivTimeCompInit1D,
                               kernel_time_computation_init{},
                               digisDevEB.const_view(),
-                              digisDevEE.const_view());
-           //int sharedBytesInit = 2 * threads_time_init * sizeof(SampleVector::Scalar);
-      //    kernel_time_computation_init<<<blocks_time_init, threads_time_init, sharedBytesInit, cudaStream>>>(
-      //        eventInputGPU.ebDigis.data.get(),
-      //        eventInputGPU.ebDigis.ids.get(),
-      //        eventInputGPU.eeDigis.data.get(),
-      //        eventInputGPU.eeDigis.ids.get(),
-      //        conditions.pedestals.rms_x12,
-      //        conditions.pedestals.rms_x6,
-      //        conditions.pedestals.rms_x1,
-      //        conditions.pedestals.mean_x12,
-      //        conditions.pedestals.mean_x6,
-      //        conditions.pedestals.mean_x1,
-      //        conditions.gainRatios.gain12Over6,
-      //        conditions.gainRatios.gain6Over1,
-      //        scratch.sample_values.get(),
-      //        scratch.sample_value_errors.get(),
-      //        scratch.ampMaxError.get(),
-      //        scratch.useless_sample_values.get(),
-      //        scratch.pedestal_nums.get(),
-      //        offsetForHashes,
-      //        offsetForInputs,
-      //        conditions.sampleMask.getEcalSampleMaskRecordEB(),
-      //        conditions.sampleMask.getEcalSampleMaskRecordEE(),
-      //        totalChannels);
-      //    cudaCheck(cudaGetLastError());
- 
+                              digisDevEE.const_view(),
+                              conditionsDev.const_view(),
+                              scratch.sample_valuesDevBuf.value().data(),
+                              scratch.sample_value_errorsDevBuf.value().data(),
+                              scratch.ampMaxErrorDevBuf.value().data(),
+                              scratch.useless_sample_valuesDevBuf.value().data(),
+                              scratch.pedestal_numsDevBuf.value().data());
+
           //
           // TODO: small kernel only for EB. It needs to be checked if
           /// fusing such small kernels is beneficial in here
@@ -171,7 +118,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           // therefore we need to create threads/blocks only for that
           auto const threadsFixMGPA = threads_1d;
           auto const blocksFixMGPA =
-              threadsFixMGPA > EcalDataFrame::MAXSAMPLES * static_cast<unsigned int>(digisDevEB->metadata().size()) // TODO check if metadata.size is OK here
+              threadsFixMGPA > EcalDataFrame::MAXSAMPLES * static_cast<unsigned int>(digisDevEB->metadata().size()) // FIXME check if metadata.size is OK here
                   ? 1
                   : (EcalDataFrame::MAXSAMPLES * static_cast<unsigned int>(digisDevEB->metadata().size()) + threadsFixMGPA - 1) / threadsFixMGPA;
           auto workDivTimeFixMGPAslew1D = cms::alpakatools::make_workdiv<Acc1D>(blocksFixMGPA, threadsFixMGPA);
@@ -179,110 +126,86 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                               workDivTimeFixMGPAslew1D,
                               kernel_time_compute_fixMGPAslew{},
                               digisDevEB.const_view(),
-                              digisDevEE.const_view());
-      //    kernel_time_compute_fixMGPAslew<<<blocksFixMGPA, threadsFixMGPA, 0, cudaStream>>>(
-      //        eventInputGPU.ebDigis.data.get(),
-      //        eventInputGPU.eeDigis.data.get(),
-      //        scratch.sample_values.get(),
-      //        scratch.sample_value_errors.get(),
-      //        scratch.useless_sample_values.get(),
-      //        conditions.sampleMask.getEcalSampleMaskRecordEB(),
-      //        totalChannels,
-      //        offsetForInputs);
-      //    cudaCheck(cudaGetLastError());
- 
-      //    int sharedBytes = EcalDataFrame::MAXSAMPLES * nchannels_per_block * 4 * sizeof(SampleVector::Scalar);
+                              digisDevEE.const_view(),
+                              conditionsDev.const_view(),
+                              scratch.sample_valuesDevBuf.value().data(),
+                              scratch.sample_value_errorsDevBuf.value().data(),
+                              scratch.useless_sample_valuesDevBuf.value().data());
+                  
           auto const threads_nullhypot = threads_1d;
           auto const blocks_nullhypot = blocks_1d;
           auto workDivTimeNullhypot1D = cms::alpakatools::make_workdiv<Acc1D>(blocks_nullhypot, threads_nullhypot);
           alpaka::exec<Acc1D>(queue,
                               workDivTimeNullhypot1D,
-                              kernel_time_compute_nullhypot{});
-      //    kernel_time_compute_nullhypot<<<blocks_nullhypot, threads_nullhypot, sharedBytes, cudaStream>>>(
-      //        scratch.sample_values.get(),
-      //        scratch.sample_value_errors.get(),
-      //        scratch.useless_sample_values.get(),
-      //        scratch.chi2sNullHypot.get(),
-      //        scratch.sum0sNullHypot.get(),
-      //        scratch.sumAAsNullHypot.get(),
-      //        totalChannels);
-      //    cudaCheck(cudaGetLastError());
- 
+                              kernel_time_compute_nullhypot{},
+                              digisDevEB.const_view(),
+                              digisDevEE.const_view(),
+                              scratch.sample_valuesDevBuf.value().data(),
+                              scratch.sample_value_errorsDevBuf.value().data(),
+                              scratch.useless_sample_valuesDevBuf.value().data(),
+                              scratch.chi2sNullHypotDevBuf.value().data(),
+                              scratch.sum0sNullHypotDevBuf.value().data(),
+                              scratch.sumAAsNullHypotDevBuf.value().data());
+
           unsigned int const nchannels_per_block_makeratio = 10;
           auto const threads_makeratio = 45 * nchannels_per_block_makeratio;
           unsigned int const blocks_makeratio = threads_makeratio > 45 * totalChannels
                                               ? 1
                                               : (totalChannels * 45 + threads_makeratio - 1) / threads_makeratio;
-      //    int sharedBytesMakeRatio = 5 * threads_makeratio * sizeof(SampleVector::Scalar);
           auto workDivTimeMakeRatio1D = cms::alpakatools::make_workdiv<Acc1D>(blocks_makeratio, threads_makeratio);
           alpaka::exec<Acc1D>(queue,
                               workDivTimeMakeRatio1D,
                               kernel_time_compute_makeratio{},
                               digisDevEB.const_view(),
-                              digisDevEE.const_view());
-      //    kernel_time_compute_makeratio<<<blocks_makeratio, threads_makeratio, sharedBytesMakeRatio, cudaStream>>>(
-      //        scratch.sample_values.get(),
-      //        scratch.sample_value_errors.get(),
-      //        eventInputGPU.ebDigis.ids.get(),
-      //        eventInputGPU.eeDigis.ids.get(),
-      //        scratch.useless_sample_values.get(),
-      //        scratch.pedestal_nums.get(),
-      //        configParameters.amplitudeFitParametersEB,
-      //        configParameters.amplitudeFitParametersEE,
-      //        configParameters.timeFitParametersEB,
-      //        configParameters.timeFitParametersEE,
-      //        scratch.sumAAsNullHypot.get(),
-      //        scratch.sum0sNullHypot.get(),
-      //        scratch.tMaxAlphaBetas.get(),
-      //        scratch.tMaxErrorAlphaBetas.get(),
-      //        scratch.accTimeMax.get(),
-      //        scratch.accTimeWgt.get(),
-      //        scratch.tcState.get(),
-      //        configParameters.timeFitParametersSizeEB,
-      //        configParameters.timeFitParametersSizeEE,
-      //        configParameters.timeFitLimitsFirstEB,
-      //        configParameters.timeFitLimitsFirstEE,
-      //        configParameters.timeFitLimitsSecondEB,
-      //        configParameters.timeFitLimitsSecondEE,
-      //        totalChannels,
-      //        offsetForInputs);
-      //    cudaCheck(cudaGetLastError());
- 
+                              digisDevEE.const_view(),
+                              scratch.sample_valuesDevBuf.value().data(),
+                              scratch.sample_value_errorsDevBuf.value().data(),
+                              scratch.useless_sample_valuesDevBuf.value().data(),
+                              scratch.pedestal_numsDevBuf.value().data(),
+                              scratch.sumAAsNullHypotDevBuf.value().data(),
+                              scratch.sum0sNullHypotDevBuf.value().data(),
+                              scratch.tMaxAlphaBetasDevBuf.value().data(),
+                              scratch.tMaxErrorAlphaBetasDevBuf.value().data(),
+                              scratch.accTimeMaxDevBuf.value().data(),
+                              scratch.accTimeWgtDevBuf.value().data(),
+                              scratch.tcStateDevBuf.value().data(),
+                              configParams.amplitudeFitParametersEB,
+                              configParams.amplitudeFitParametersEE,
+                              configParams.timeFitParametersEB,
+                              configParams.timeFitParametersEE,
+                              configParams.timeFitParametersSizeEB,
+                              configParams.timeFitParametersSizeEE,
+                              configParams.timeFitLimitsFirstEB,
+                              configParams.timeFitLimitsFirstEE,
+                              configParams.timeFitLimitsSecondEB,
+                              configParams.timeFitLimitsSecondEE);
+
           auto const threads_findamplchi2 = threads_1d;
           auto const blocks_findamplchi2 = blocks_1d;
-      //    int const sharedBytesFindAmplChi2 = 2 * threads_findamplchi2 * sizeof(SampleVector::Scalar);
           auto workDivTimeFindAmplChi21D = cms::alpakatools::make_workdiv<Acc1D>(blocks_findamplchi2, threads_findamplchi2);
           alpaka::exec<Acc1D>(queue,
                               workDivTimeFindAmplChi21D,
                               kernel_time_compute_findamplchi2_and_finish{},
                               digisDevEB.const_view(),
-                              digisDevEE.const_view());
-      //    kernel_time_compute_findamplchi2_and_finish<<<blocks_findamplchi2,
-      //                                                  threads_findamplchi2,
-      //                                                  sharedBytesFindAmplChi2,
-      //                                                  cudaStream>>>(scratch.sample_values.get(),
-      //                                                                scratch.sample_value_errors.get(),
-      //                                                                eventInputGPU.ebDigis.ids.get(),
-      //                                                                eventInputGPU.eeDigis.ids.get(),
-      //                                                                scratch.useless_sample_values.get(),
-      //                                                                scratch.tMaxAlphaBetas.get(),
-      //                                                                scratch.tMaxErrorAlphaBetas.get(),
-      //                                                                scratch.accTimeMax.get(),
-      //                                                                scratch.accTimeWgt.get(),
-      //                                                                configParameters.amplitudeFitParametersEB,
-      //                                                                configParameters.amplitudeFitParametersEE,
-      //                                                                scratch.sumAAsNullHypot.get(),
-      //                                                                scratch.sum0sNullHypot.get(),
-      //                                                                scratch.chi2sNullHypot.get(),
-      //                                                                scratch.tcState.get(),
-      //                                                                scratch.ampMaxAlphaBeta.get(),
-      //                                                                scratch.ampMaxError.get(),
-      //                                                                scratch.timeMax.get(),
-      //                                                                scratch.timeError.get(),
-      //                                                                totalChannels,
-      //                                                                offsetForInputs);
-      //    cudaCheck(cudaGetLastError());
- 
+                              digisDevEE.const_view(),
+                              scratch.sample_valuesDevBuf.value().data(),
+                              scratch.sample_value_errorsDevBuf.value().data(),
+                              scratch.useless_sample_valuesDevBuf.value().data(),
+                              scratch.tMaxAlphaBetasDevBuf.value().data(),
+                              scratch.tMaxErrorAlphaBetasDevBuf.value().data(),
+                              scratch.accTimeMaxDevBuf.value().data(),
+                              scratch.accTimeWgtDevBuf.value().data(),
+                              scratch.sumAAsNullHypotDevBuf.value().data(),
+                              scratch.sum0sNullHypotDevBuf.value().data(),
+                              scratch.chi2sNullHypotDevBuf.value().data(),
+                              scratch.tcStateDevBuf.value().data(),
+                              scratch.ampMaxAlphaBetaDevBuf.value().data(),
+                              scratch.ampMaxErrorDevBuf.value().data(),
+                              scratch.timeMaxDevBuf.value().data(),
+                              scratch.timeErrorDevBuf.value().data(),
+                              configParams.amplitudeFitParametersEB,
+                              configParams.amplitudeFitParametersEE);
+
           auto const threads_timecorr = 32;
           auto const blocks_timecorr =
               threads_timecorr > totalChannels ? 1 : (totalChannels + threads_timecorr - 1) / threads_timecorr;
@@ -293,53 +216,27 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                               digisDevEB.const_view(),
                               digisDevEE.const_view(),
                               uncalibRecHitsDevEB.view(),
-                              uncalibRecHitsDevEE.view());
-      //    kernel_time_correction_and_finalize<<<blocks_timecorr, threads_timecorr, 0, cudaStream>>>(
-      //        eventOutputGPU.recHitsEB.amplitude.get(),
-      //        eventOutputGPU.recHitsEE.amplitude.get(),
-      //        eventInputGPU.ebDigis.data.get(),
-      //        eventInputGPU.ebDigis.ids.get(),
-      //        eventInputGPU.eeDigis.data.get(),
-      //        eventInputGPU.eeDigis.ids.get(),
-      //        conditions.timeBiasCorrections.ebTimeCorrAmplitudeBins,
-      //        conditions.timeBiasCorrections.eeTimeCorrAmplitudeBins,
-      //        conditions.timeBiasCorrections.ebTimeCorrShiftBins,
-      //        conditions.timeBiasCorrections.eeTimeCorrShiftBins,
-      //        scratch.timeMax.get(),
-      //        scratch.timeError.get(),
-      //        conditions.pedestals.rms_x12,
-      //        conditions.timeCalibConstants.values,
-      //        eventOutputGPU.recHitsEB.jitter.get(),
-      //        eventOutputGPU.recHitsEE.jitter.get(),
-      //        eventOutputGPU.recHitsEB.jitterError.get(),
-      //        eventOutputGPU.recHitsEE.jitterError.get(),
-      //        eventOutputGPU.recHitsEB.flags.get(),
-      //        eventOutputGPU.recHitsEE.flags.get(),
-      //        conditions.timeBiasCorrections.ebTimeCorrAmplitudeBinsSize,
-      //        conditions.timeBiasCorrections.eeTimeCorrAmplitudeBinsSize,
-      //        configParameters.timeConstantTermEB,
-      //        configParameters.timeConstantTermEE,
-      //        conditions.timeOffsetConstant.getEBValue(),
-      //        conditions.timeOffsetConstant.getEEValue(),
-      //        configParameters.timeNconstEB,
-      //        configParameters.timeNconstEE,
-      //        configParameters.amplitudeThreshEB,
-      //        configParameters.amplitudeThreshEE,
-      //        configParameters.outOfTimeThreshG12pEB,
-      //        configParameters.outOfTimeThreshG12pEE,
-      //        configParameters.outOfTimeThreshG12mEB,
-      //        configParameters.outOfTimeThreshG12mEE,
-      //        configParameters.outOfTimeThreshG61pEB,
-      //        configParameters.outOfTimeThreshG61pEE,
-      //        configParameters.outOfTimeThreshG61mEB,
-      //        configParameters.outOfTimeThreshG61mEE,
-      //        offsetForHashes,
-      //        offsetForInputs,
-      //        totalChannels);
-      //    cudaCheck(cudaGetLastError());
+                              uncalibRecHitsDevEE.view(),
+                              conditionsDev.const_view(),
+                              scratch.timeMaxDevBuf.value().data(),
+                              scratch.timeErrorDevBuf.value().data(),
+                              configParams.timeConstantTermEB,
+                              configParams.timeConstantTermEE,
+                              configParams.timeNconstEB,
+                              configParams.timeNconstEE,
+                              configParams.amplitudeThreshEB,
+                              configParams.amplitudeThreshEE,
+                              configParams.outOfTimeThreshG12pEB,
+                              configParams.outOfTimeThreshG12pEE,
+                              configParams.outOfTimeThreshG12mEB,
+                              configParams.outOfTimeThreshG12mEE,
+                              configParams.outOfTimeThreshG61pEB,
+                              configParams.outOfTimeThreshG61pEE,
+                              configParams.outOfTimeThreshG61mEB,
+                              configParams.outOfTimeThreshG61mEE);
         }
       }
- 
+
     }  // namespace multifit
   }  // namespace ecal
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
