@@ -15,8 +15,8 @@ ecalUncalibRecHitPhase2Portable = _ecalUncalibRecHitPhase2Portable.clone(
 from RecoLocalCalo.EcalRecProducers.ecalUncalibRecHitConvertPortable2CPUFormat_cfi import ecalUncalibRecHitConvertPortable2CPUFormat as _ecalUncalibRecHitConvertPortable2CPUFormat
 ecalUncalibRecHitPhase2 = _ecalUncalibRecHitConvertPortable2CPUFormat.clone(
     isPhase2 = True,
-    recHitsLabelGPUEB = ('ecalUncalibRecHitPhase2Portable', 'EcalUncalibRecHitsEB'),
-    recHitsLabelGPUEE = None,  # remove unneeded Phase1 parameters
+    recHitsLabelPortableEB = ('ecalUncalibRecHitPhase2Portable', 'EcalUncalibRecHitsEB'),
+    recHitsLabelPortableEE = None,  # remove unneeded Phase1 parameters
     recHitsLabelCPUEE = None
 )
 
@@ -30,7 +30,7 @@ ecalUncalibRecHitPhase2Task = cms.Task(
   ecalUncalibRecHitPhase2
 )
 
-#CUDA switch producer
+#previous CUDA switch producer
 '''import FWCore.ParameterSet.Config as cms
 from HeterogeneousCore.CUDACore.SwitchProducerCUDA import SwitchProducerCUDA
 from Configuration.ProcessModifiers.gpu_cff import gpu
