@@ -65,8 +65,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             auto const blockIdx = alpaka::getIdx<alpaka::Grid, alpaka::Blocks>(acc)[0u];
             auto const blockDim = alpaka::getWorkDiv<alpaka::Block, alpaka::Threads>(acc)[0u];
             auto const tx = threadIdx + blockIdx * blockDim;
-            //auto const nchannels_per_block = blockDim / nsamples;  // FIXME
-            uint32_t constexpr nchannels_per_block = 32;
+            auto const nchannels_per_block = blockDim / nsamples;
             auto const ch = tx / nsamples;
             // for accessing input arrays
             int const inputCh = ch >= nchannelsEB ? ch - nchannelsEB : ch;
@@ -86,12 +85,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             auto const* shapes_in = reinterpret_cast<const EcalPulseShape*>(conditionsDev.pulseShapes()->data());
 
             if (ch < nchannels) {
-              auto& shr_hasSwitchToGain6 = alpaka::declareSharedVar<bool[nchannels_per_block * nsamples], __COUNTER__>(acc);
-              auto& shr_hasSwitchToGain1 = alpaka::declareSharedVar<bool[nchannels_per_block * nsamples], __COUNTER__>(acc);
-              auto& shr_hasSwitchToGain0 = alpaka::declareSharedVar<bool[nchannels_per_block * nsamples], __COUNTER__>(acc);
-              auto& shr_isSaturated = alpaka::declareSharedVar<bool[nchannels_per_block * nsamples], __COUNTER__>(acc);
-              auto& shr_hasSwitchToGain0_tmp = alpaka::declareSharedVar<bool[nchannels_per_block * nsamples], __COUNTER__>(acc);
-              auto& shr_counts = alpaka::declareSharedVar<uint32_t[nchannels_per_block * nsamples], __COUNTER__>(acc);
+              char* shared_mem = alpaka::getDynSharedMem<char>(acc);
+              auto* shr_hasSwitchToGain6 = reinterpret_cast<bool*>(shared_mem);
+              auto* shr_hasSwitchToGain1 = shr_hasSwitchToGain6 + nchannels_per_block * nsamples;
+              auto* shr_hasSwitchToGain0 = shr_hasSwitchToGain1 + nchannels_per_block * nsamples;
+              auto* shr_isSaturated = shr_hasSwitchToGain0 + nchannels_per_block * nsamples;
+              auto* shr_hasSwitchToGain0_tmp = shr_isSaturated + nchannels_per_block * nsamples;
+              auto* shr_counts = reinterpret_cast<char*>(shr_hasSwitchToGain0_tmp) + nchannels_per_block * nsamples;
 
               //
               // indices
@@ -449,5 +449,28 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     }  // namespace multifit
   }  // namespace ecal
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
+
+namespace alpaka::trait
+{
+  using namespace ALPAKA_ACCELERATOR_NAMESPACE::ecal::multifit;
+
+  //! The trait for getting the size of the block shared dynamic memory for kernel_prep_1d_and_initialize.
+  template<typename TAcc>
+  struct BlockSharedMemDynSizeBytes<kernel_prep_1d_and_initialize, TAcc>
+  {
+    //! \return The size of the shared memory allocated for a block.
+    template<typename TVec, typename... TArgs>
+    ALPAKA_FN_HOST_ACC static auto getBlockSharedMemDynSizeBytes(
+      kernel_prep_1d_and_initialize const&,
+      TVec const& threadsPerBlock,
+      TVec const&,
+      TArgs const&...) -> std::size_t
+    {
+      // return the amount of dynamic shared memory needed
+      std::size_t bytes = threadsPerBlock[0u] * EcalDataFrame::MAXSAMPLES * (5 * sizeof(bool) + sizeof(char));
+      return bytes;
+    }
+  };
+} // namespace alpaka::trait
 
 #endif  // RecoLocalCalo_EcalRecProducers_plugins_AmplitudeComputationCommonKernels_h

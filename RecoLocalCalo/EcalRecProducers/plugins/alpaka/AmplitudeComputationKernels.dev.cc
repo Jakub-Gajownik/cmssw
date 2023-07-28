@@ -87,8 +87,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
             using DataType = SampleVector::Scalar;
 
-            DataType* shrmem = alpaka::getDynSharedMem<DataType>(acc);
-
             auto const blockDim(alpaka::getWorkDiv<alpaka::Block, alpaka::Threads>(acc)[0u]);
             auto const threadIdx(alpaka::getIdx<alpaka::Block, alpaka::Threads>(acc)[0u]);
             auto const blockIdx(alpaka::getIdx<alpaka::Grid, alpaka::Blocks>(acc)[0u]);
@@ -99,6 +97,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
             auto const* pulse_covariance = reinterpret_cast<const EcalPulseCovariance*>(conditionsDev.pulseCovariance());
 
+            DataType* shrmem = alpaka::getDynSharedMem<DataType>(acc);
             DataType* shrMatrixLForFnnlsStorage = shrmem + calo::multifit::MapSymM<DataType, NPULSES>::total * threadIdx;
             DataType* shrAtAStorage = shrmem + calo::multifit::MapSymM<DataType, NPULSES>::total * (threadIdx + blockDim);
 
@@ -284,7 +283,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           // TODO: configure from python
           auto threads_min = configParams.kernelMinimizeThreads[0];
           auto blocks_min = threads_min > totalChannels ? 1 : (totalChannels + threads_min - 1) / threads_min;
-          //uint32_t const offsetForHashes = conditionsDev.offsetForHashes;  // FIXME check this
 
           auto workDivMinimize = cms::alpakatools::make_workdiv<Acc1D>(blocks_min, threads_min);
           alpaka::exec<Acc1D>(queue,
@@ -310,5 +308,31 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       }  // namespace v1
     }  // namespace multifit
   }  // namespace ecal
+
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
+
+namespace alpaka::trait
+{
+  using namespace ALPAKA_ACCELERATOR_NAMESPACE::ecal::multifit;
+
+  //! The trait for getting the size of the block shared dynamic memory for kernel_minimize.
+  template<typename TAcc>
+  struct BlockSharedMemDynSizeBytes<kernel_minimize, TAcc>
+  {
+    //! \return The size of the shared memory allocated for a block.
+    template<typename TVec, typename... TArgs>
+    ALPAKA_FN_HOST_ACC static auto getBlockSharedMemDynSizeBytes(
+      kernel_minimize const&,
+      TVec const& threadsPerBlock,
+      TVec const&,
+      TArgs const&...) -> std::size_t
+    {
+      using ScalarType = ecal::multifit::SampleVector::Scalar;
+
+      // return the amount of dynamic shared memory needed
+      std::size_t bytes = 2 * threadsPerBlock[0u] * calo::multifit::MapSymM<ScalarType, ecal::multifit::SampleVector::RowsAtCompileTime>::total * sizeof(ScalarType);
+      return bytes;
+    }
+  };
+} // namespace alpaka::trait
 

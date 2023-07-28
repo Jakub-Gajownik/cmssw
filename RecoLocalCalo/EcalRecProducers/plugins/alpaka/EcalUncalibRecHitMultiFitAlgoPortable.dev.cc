@@ -71,7 +71,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         //
         // 2d preparation kernel
         //
-        Vec2D const blocks_2d{totalChannels, 1u};
+        Vec2D const blocks_2d{1u, totalChannels};
         Vec2D const threads_2d{EcalDataFrame::MAXSAMPLES, EcalDataFrame::MAXSAMPLES};
         auto workDivPrep2D = cms::alpakatools::make_workdiv<Acc2D>(blocks_2d, threads_2d);
         alpaka::exec<Acc2D>(queue,

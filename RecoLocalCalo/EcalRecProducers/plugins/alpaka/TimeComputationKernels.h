@@ -56,8 +56,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             auto const tx = threadIdx + blockDim * blockIdx;
             auto const ltx = threadIdx;
             auto const ch = tx / nsamples;
-            //auto const nchannels_per_block = blockDim / nsamples;
-            uint32_t constexpr nchannels_per_block = 32;  // FIXME
+            auto const nchannels_per_block = blockDim / nsamples;
 
             // threads that return here should not affect the alpaka::syncBlockThreads below since they have exitted the kernel
             if (ch >= nchannels)
@@ -66,10 +65,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             auto const sample = tx % nsamples;
 
             // shared mem inits
-            auto& s_sum0 = alpaka::declareSharedVar<char[nchannels_per_block * nsamples], __COUNTER__>(acc);
-            auto& s_sum1 = alpaka::declareSharedVar<ScalarType[nchannels_per_block * nsamples], __COUNTER__>(acc);
-            auto& s_sumA = alpaka::declareSharedVar<ScalarType[nchannels_per_block * nsamples], __COUNTER__>(acc);
-            auto& s_sumAA = alpaka::declareSharedVar<ScalarType[nchannels_per_block * nsamples], __COUNTER__>(acc);
+            auto* sdata = alpaka::getDynSharedMem<char>(acc);
+            auto* s_sum0 = sdata;
+            auto* s_sum1 = reinterpret_cast<ScalarType*>(s_sum0 + nchannels_per_block * nsamples);
+            auto* s_sumA = s_sum1 + nchannels_per_block * nsamples;
+            auto* s_sumAA = s_sumA + nchannels_per_block * nsamples;
 
             // TODO make sure no div by 0
             auto const inv_error =
@@ -159,7 +159,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             constexpr auto nsamples = EcalDataFrame::MAXSAMPLES;
             auto const nchannels = digisDevEB.size() + digisDevEE.size();
             auto const offsetForInputs = digisDevEB.size();
-            constexpr uint32_t blockDimConstexpr = 32;  // FIXME: this needs to come from elsewhere or change shared memory allocation
 
             // indices
             auto const threadIdx = alpaka::getIdx<alpaka::Block, alpaka::Threads>(acc)[0u];
@@ -185,16 +184,17 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             auto const timeFitLimits_first = isBarrel ? timeFitLimits_firstEB : timeFitLimits_firstEE;
             auto const timeFitLimits_second = isBarrel ? timeFitLimits_secondEB : timeFitLimits_secondEE;
 
-            auto& shr_chi2s = alpaka::declareSharedVar<ScalarType[blockDimConstexpr], __COUNTER__>(acc);
-            auto& shr_time_wgt = alpaka::declareSharedVar<ScalarType[blockDimConstexpr], __COUNTER__>(acc);
-            auto& shr_time_max = alpaka::declareSharedVar<ScalarType[blockDimConstexpr], __COUNTER__>(acc);
-            auto& shrTimeMax = alpaka::declareSharedVar<ScalarType[blockDimConstexpr], __COUNTER__>(acc);
-            auto& shrTimeWgt = alpaka::declareSharedVar<ScalarType[blockDimConstexpr], __COUNTER__>(acc);
+            auto* smem = alpaka::getDynSharedMem<char>(acc);
+            auto* shr_chi2s = reinterpret_cast<ScalarType*>(smem);
+            auto* shr_time_wgt = shr_chi2s + blockDim;
+            auto* shr_time_max = shr_time_wgt + blockDim;
+            auto* shrTimeMax = shr_time_max + blockDim;
+            auto* shrTimeWgt = shrTimeMax + blockDim;
 
             // map tx -> (sample_i, sample_j)
             int sample_i = 0;
             int sample_j = 0;
-            if (ltx >= 0 && ltx <= 8) {
+            if (ltx <= 8) {
               sample_i = 0;
               sample_j = 1 + ltx;
             } else if (ltx <= 16) {
@@ -527,7 +527,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             constexpr auto nsamples = EcalDataFrame::MAXSAMPLES;
             auto const nchannels = digisDevEB.size() + digisDevEE.size();
             auto const offsetForInputs = digisDevEB.size();
-            constexpr uint32_t blockDimConstexpr = 32;  // FIXME: this needs to come from elsewhere or change shared memory allocation
 
             // indices
             auto const threadIdx = alpaka::getIdx<alpaka::Block, alpaka::Threads>(acc)[0u];
@@ -542,8 +541,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             // configure shared mem
             // per block, we need #threads per block * 2 * sizeof(ScalarType)
             // we run with N channels per block
-            auto& shr_sumAf = alpaka::declareSharedVar<ScalarType[blockDimConstexpr], __COUNTER__>(acc);
-            auto& shr_sumff = alpaka::declareSharedVar<ScalarType[blockDimConstexpr], __COUNTER__>(acc);
+            auto* smem = alpaka::getDynSharedMem<char>(acc);
+            auto* shr_sumAf = reinterpret_cast<ScalarType*>(smem);
+            auto* shr_sumff = shr_sumAf + blockDim;
 
             if (ch >= nchannels)
               return;
@@ -771,7 +771,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             auto const threadIdx = alpaka::getIdx<alpaka::Block, alpaka::Threads>(acc)[0u];
             auto const blockIdx = alpaka::getIdx<alpaka::Grid, alpaka::Blocks>(acc)[0u];
             auto const blockDim = alpaka::getWorkDiv<alpaka::Block, alpaka::Threads>(acc)[0u];
-            constexpr uint32_t blockDimConstexpr = 32;  // FIXME: this needs to come from elsewhere or change shared memory allocation
             auto const tx = threadIdx + blockDim * blockIdx;
             auto const ch = tx / nsamples;
             int const inputTx = ch >= offsetForInputs ? tx - offsetForInputs * nsamples : tx;
@@ -790,8 +789,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             int num = 0;
 
             // configure shared mem
-            auto& shrSampleValues = alpaka::declareSharedVar<ScalarType[blockDimConstexpr], __COUNTER__>(acc);
-            auto& shrSampleValueErrors = alpaka::declareSharedVar<ScalarType[blockDimConstexpr], __COUNTER__>(acc);
+            auto* smem = alpaka::getDynSharedMem<char>(acc);
+            auto* shrSampleValues = reinterpret_cast<ScalarType*>(smem);
+            auto* shrSampleValueErrors = shrSampleValues + blockDim;
 
             // 0 and 1 sample values
             auto const adc0 = ecalMGPA::adc(digis[input_ch_start]);
@@ -1071,5 +1071,85 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     }  // namespace multifit
   }  // namespace ecal
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
+
+namespace alpaka::trait
+{
+  using namespace ALPAKA_ACCELERATOR_NAMESPACE::ecal::multifit;
+
+  //! The trait for getting the size of the block shared dynamic memory for kernel_time_compute_nullhypot.
+  template<typename TAcc>
+  struct BlockSharedMemDynSizeBytes<kernel_time_compute_nullhypot, TAcc>
+  {
+    //! \return The size of the shared memory allocated for a block.
+    template<typename TVec, typename... TArgs>
+    ALPAKA_FN_HOST_ACC static auto getBlockSharedMemDynSizeBytes(
+      kernel_time_compute_nullhypot const&,
+      TVec const& threadsPerBlock,
+      TVec const&,
+      TArgs const&...) -> std::size_t
+    {
+      using ScalarType = ecal::multifit::SampleVector::Scalar;
+
+      // return the amount of dynamic shared memory needed
+      std::size_t bytes = EcalDataFrame::MAXSAMPLES * threadsPerBlock[0u] * 4 * sizeof(ScalarType);
+      return bytes;
+    }
+  };
+
+  //! The trait for getting the size of the block shared dynamic memory for kernel_time_compute_makeratio.
+  template<typename TAcc>
+  struct BlockSharedMemDynSizeBytes<kernel_time_compute_makeratio, TAcc>
+  {
+    template<typename TVec, typename... TArgs>
+    ALPAKA_FN_HOST_ACC static auto getBlockSharedMemDynSizeBytes(
+      kernel_time_compute_makeratio const&,
+      TVec const& threadsPerBlock,
+      TVec const&,
+      TArgs const&...) -> std::size_t
+    {
+      using ScalarType = ecal::multifit::SampleVector::Scalar;
+
+      std::size_t bytes = 5 * threadsPerBlock[0u] * sizeof(ScalarType);
+      return bytes;
+    }
+  };
+
+  //! The trait for getting the size of the block shared dynamic memory for kernel_time_compute_findamplchi2_and_finish.
+  template<typename TAcc>
+  struct BlockSharedMemDynSizeBytes<kernel_time_compute_findamplchi2_and_finish, TAcc>
+  {
+    template<typename TVec, typename... TArgs>
+    ALPAKA_FN_HOST_ACC static auto getBlockSharedMemDynSizeBytes(
+      kernel_time_compute_findamplchi2_and_finish const&,
+      TVec const& threadsPerBlock,
+      TVec const&,
+      TArgs const&...) -> std::size_t
+    {
+      using ScalarType = ecal::multifit::SampleVector::Scalar;
+
+      std::size_t bytes = 2 * threadsPerBlock[0u] * sizeof(ScalarType);
+      return bytes;
+    }
+  };
+
+  //! The trait for getting the size of the block shared dynamic memory for kernel_time_computation_init.
+  template<typename TAcc>
+  struct BlockSharedMemDynSizeBytes<kernel_time_computation_init, TAcc>
+  {
+    template<typename TVec, typename... TArgs>
+    ALPAKA_FN_HOST_ACC static auto getBlockSharedMemDynSizeBytes(
+      kernel_time_computation_init const&,
+      TVec const& threadsPerBlock,
+      TVec const&,
+      TArgs const&...) -> std::size_t
+    {
+      using ScalarType = ecal::multifit::SampleVector::Scalar;
+
+      std::size_t bytes = 2 * threadsPerBlock[0u] * sizeof(ScalarType);
+      return bytes;
+    }
+  };
+
+} // namespace alpaka::trait
 
 #endif  // RecoLocalCalo_EcalRecProducers_plugins_TimeComputationKernels_h
