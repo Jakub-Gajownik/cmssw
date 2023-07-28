@@ -50,7 +50,9 @@ GENERATE_SOA_LAYOUT(EcalMultifitConditionsSoALayout,
                     SOA_SCALAR(unsigned int, sampleMask_EB),
                     SOA_SCALAR(unsigned int, sampleMask_EE),
                     SOA_SCALAR(float, timeOffset_EB),
-                    SOA_SCALAR(float, timeOffset_EE)
+                    SOA_SCALAR(float, timeOffset_EE),
+                    // offset for hashed ID access to EE items of columns
+                    SOA_SCALAR(uint32_t, offsetEE)
   )
 
 using EcalMultifitConditionsSoA = EcalMultifitConditionsSoALayout<>;

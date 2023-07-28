@@ -767,7 +767,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             auto const nchannelsEB = digisDevEB.size();
             auto const nchannels = nchannelsEB + digisDevEE.size();
             auto const offsetForInputs = nchannelsEB;
-            auto const offsetForHashes = offsetForInputs;
+            auto const offsetForHashes = conditionsDev.offsetEE();
             auto const threadIdx = alpaka::getIdx<alpaka::Block, alpaka::Threads>(acc)[0u];
             auto const blockIdx = alpaka::getIdx<alpaka::Grid, alpaka::Blocks>(acc)[0u];
             auto const blockDim = alpaka::getWorkDiv<alpaka::Block, alpaka::Threads>(acc)[0u];
@@ -960,7 +960,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             auto const nchannelsEB = digisDevEB.size();
             auto const nchannels = nchannelsEB + digisDevEE.size();
             auto const offsetForInputs = nchannelsEB;
-            auto const offsetForHashes = offsetForInputs;
+            auto const offsetForHashes = conditionsDev.offsetEE();
 
             // indices
             auto const threadIdx = alpaka::getIdx<alpaka::Block, alpaka::Threads>(acc)[0u];

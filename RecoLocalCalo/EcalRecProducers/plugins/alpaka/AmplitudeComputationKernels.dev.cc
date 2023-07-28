@@ -95,7 +95,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
             auto const nchannelsEB = digisDevEB.size();
             auto const nchannels = nchannelsEB + digisDevEE.size();
-            auto const offsetForHashes = nchannelsEB; // FIXME: Check this
+            auto const offsetForHashes = conditionsDev.offsetEE();
 
             auto const* pulse_covariance = reinterpret_cast<const EcalPulseCovariance*>(conditionsDev.pulseCovariance());
 

@@ -24,9 +24,6 @@
 #include "../EigenMatrixTypes_gpu.h"
 #include "KernelHelpers.h"
 
-// this flag setting is applied to all of the cases
-struct EcalPulseCovariance;
-
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   namespace ecal {
@@ -60,6 +57,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             constexpr auto nsamples = EcalDataFrame::MAXSAMPLES;
             constexpr int sample_max = 5;
             constexpr int full_pulse_max = 9;
+            auto const offsetForHashes = conditionsDev.offsetEE();
 
             auto const nchannelsEB = digisDevEB.size();
             auto const nchannels = nchannelsEB + digisDevEE.size();
@@ -102,7 +100,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
               auto const isBarrel = did.subdetId() == EcalBarrel;
               // TODO offset for ee, 0 for eb
               auto const hashedId = isBarrel ? reconstruction::hashedIndexEB(did.rawId())
-                                             : nchannelsEB + reconstruction::hashedIndexEE(did.rawId());
+                                             : offsetForHashes + reconstruction::hashedIndexEE(did.rawId());
 
               //
               // pulse shape template
@@ -338,6 +336,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                                         bool const* hasSwitchToGain6,
                                         bool const* hasSwitchToGain1,
                                         bool const* isSaturated) const {
+            auto const offsetForHashes = conditionsDev.offsetEE();
             auto const nchannelsEB = digisDevEB.size();
             auto const ch = alpaka::getIdx<alpaka::Grid, alpaka::Blocks>(acc)[0u];
             auto const tx = alpaka::getIdx<alpaka::Block, alpaka::Threads>(acc)[0u];
@@ -353,7 +352,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             auto const did = DetId{dids[inputCh]};
             auto const isBarrel = did.subdetId() == EcalBarrel;
             auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId())
-                                           : nchannelsEB + ecal::reconstruction::hashedIndexEE(did.rawId());
+                                           : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
             auto const* G12SamplesCorrelation = isBarrel ? conditionsDev.sampleCorrelation_EB_G12().data() : conditionsDev.sampleCorrelation_EE_G12().data();
             auto const* G6SamplesCorrelation = isBarrel ? conditionsDev.sampleCorrelation_EB_G6().data() : conditionsDev.sampleCorrelation_EE_G6().data();
             auto const* G1SamplesCorrelation = isBarrel ? conditionsDev.sampleCorrelation_EB_G1().data() : conditionsDev.sampleCorrelation_EE_G1().data();

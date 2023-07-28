@@ -183,6 +183,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       // Time offsets
       view.timeOffset_EB() = timeOffsetConstantData.getEBValue();
       view.timeOffset_EE() = timeOffsetConstantData.getEEValue();
+
+      // number of barrel items as offset for hashed ID access to EE items of columns
+      view.offsetEE() = barrelSize;
       
       return product;
     }
