@@ -277,9 +277,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                                     EventDataForScratchGPU& scratch,
                                     EcalMultifitConditionsPortableDevice const& conditionsDev,
                                     ConfigurationParameters const& configParams,
+                                    uint32_t const totalChannels,
                                     Queue& queue) {
           using DataType = SampleVector::Scalar;
-          auto const totalChannels = static_cast<uint32_t>(digisDevEB->metadata().size() + digisDevEE->metadata().size());  // FIXME check this
           // TODO: configure from python
           auto threads_min = configParams.kernelMinimizeThreads[0];
           auto blocks_min = threads_min > totalChannels ? 1 : (totalChannels + threads_min - 1) / threads_min;

@@ -467,7 +467,7 @@ namespace alpaka::trait
       TArgs const&...) -> std::size_t
     {
       // return the amount of dynamic shared memory needed
-      std::size_t bytes = threadsPerBlock[0u] * EcalDataFrame::MAXSAMPLES * (5 * sizeof(bool) + sizeof(char));
+      std::size_t bytes = threadsPerBlock[0u] * (5 * sizeof(bool) + sizeof(char));
       return bytes;
     }
   };

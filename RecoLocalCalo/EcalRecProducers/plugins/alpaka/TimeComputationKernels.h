@@ -65,15 +65,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             auto const sample = tx % nsamples;
 
             // shared mem inits
-            auto* sdata = alpaka::getDynSharedMem<char>(acc);
-            auto* s_sum0 = sdata;
+            auto* s_sum0 = alpaka::getDynSharedMem<char>(acc);
             auto* s_sum1 = reinterpret_cast<ScalarType*>(s_sum0 + nchannels_per_block * nsamples);
             auto* s_sumA = s_sum1 + nchannels_per_block * nsamples;
             auto* s_sumAA = s_sumA + nchannels_per_block * nsamples;
 
             // TODO make sure no div by 0
             auto const inv_error =
-                useless_sample_values[tx] ? 0.0 : 1.0 / (sample_value_errors[tx] * sample_value_errors[tx]);
+                useless_sample_values[tx] ? 0. : 1. / (sample_value_errors[tx] * sample_value_errors[tx]);
             auto const sample_value = sample_values[tx];
             s_sum0[ltx] = useless_sample_values[tx] ? 0 : 1;
             s_sum1[ltx] = inv_error;
@@ -184,8 +183,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             auto const timeFitLimits_first = isBarrel ? timeFitLimits_firstEB : timeFitLimits_firstEE;
             auto const timeFitLimits_second = isBarrel ? timeFitLimits_secondEB : timeFitLimits_secondEE;
 
-            auto* smem = alpaka::getDynSharedMem<char>(acc);
-            auto* shr_chi2s = reinterpret_cast<ScalarType*>(smem);
+            auto* shr_chi2s = alpaka::getDynSharedMem<ScalarType>(acc);
             auto* shr_time_wgt = shr_chi2s + blockDim;
             auto* shr_time_max = shr_time_wgt + blockDim;
             auto* shrTimeMax = shr_time_max + blockDim;
@@ -541,8 +539,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             // configure shared mem
             // per block, we need #threads per block * 2 * sizeof(ScalarType)
             // we run with N channels per block
-            auto* smem = alpaka::getDynSharedMem<char>(acc);
-            auto* shr_sumAf = reinterpret_cast<ScalarType*>(smem);
+            auto* shr_sumAf = alpaka::getDynSharedMem<ScalarType>(acc);
             auto* shr_sumff = shr_sumAf + blockDim;
 
             if (ch >= nchannels)
@@ -789,8 +786,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             int num = 0;
 
             // configure shared mem
-            auto* smem = alpaka::getDynSharedMem<char>(acc);
-            auto* shrSampleValues = reinterpret_cast<ScalarType*>(smem);
+            auto* shrSampleValues = alpaka::getDynSharedMem<ScalarType>(acc);
             auto* shrSampleValueErrors = shrSampleValues + blockDim;
 
             // 0 and 1 sample values
@@ -1091,7 +1087,7 @@ namespace alpaka::trait
       using ScalarType = ecal::multifit::SampleVector::Scalar;
 
       // return the amount of dynamic shared memory needed
-      std::size_t bytes = EcalDataFrame::MAXSAMPLES * threadsPerBlock[0u] * 4 * sizeof(ScalarType);
+      std::size_t bytes = threadsPerBlock[0u] * 4 * sizeof(ScalarType);
       return bytes;
     }
   };

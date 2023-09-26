@@ -9,20 +9,20 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/EDPutToken.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/Event.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/EventSetup.h"
-#include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/global/EDProducer.h"
 
 #include "DeclsForKernels.h"
 #include "EcalUncalibRecHitMultiFitAlgoPortable.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
-  class EcalUncalibRecHitProducerPortable : public stream::EDProducer<> {
+  class EcalUncalibRecHitProducerPortable : public global::EDProducer<> {
   public:
     explicit EcalUncalibRecHitProducerPortable(edm::ParameterSet const& ps);
     ~EcalUncalibRecHitProducerPortable() override = default;
     static void fillDescriptions(edm::ConfigurationDescriptions&);
   
-    void produce(device::Event&, device::EventSetup const&) override;
+    void produce(edm::StreamID, device::Event&, device::EventSetup const&) const override;
   
   private:
     using InputProduct = ecal::DigiDeviceCollection;
@@ -144,7 +144,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     configParameters_.outOfTimeThreshG61mEE = outOfTimeThreshG61mEE;
   }
   
-  void EcalUncalibRecHitProducerPortable::produce(device::Event& event, device::EventSetup const& setup) {
+  void EcalUncalibRecHitProducerPortable::produce(edm::StreamID sid, device::Event& event, device::EventSetup const& setup) const {
     //DurationMeasurer<std::chrono::milliseconds> timer{std::string{"produce duration"}};
   
     // get device collections from event

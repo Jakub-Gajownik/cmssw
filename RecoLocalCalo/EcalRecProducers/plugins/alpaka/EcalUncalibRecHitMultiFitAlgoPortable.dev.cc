@@ -3,6 +3,7 @@
 #error ALPAKA_HOST_ONLY defined in device compilation
 #endif
 
+#include <iostream>
 #include <limits>
 #include <alpaka/alpaka.hpp>
 
@@ -37,7 +38,23 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         // according to the cpu setup  //----> hardcoded
         bool constexpr gainSwitchUseMaxSampleEE = false;
 
-        auto const totalChannels = static_cast<uint32_t>(digisDevEB->metadata().size() + digisDevEE->metadata().size()); // FIXME: actual size
+        // get the actual numbers of digis in the collections
+        auto ebDigisSizeHostBuf = cms::alpakatools::make_host_buffer<uint32_t>();
+        auto eeDigisSizeHostBuf = cms::alpakatools::make_host_buffer<uint32_t>();
+        auto ebDigisSizeDevConstView = cms::alpakatools::make_device_view<const uint32_t>(alpaka::getDev(queue), digisDevEB.const_view().size());
+        auto eeDigisSizeDevConstView = cms::alpakatools::make_device_view<const uint32_t>(alpaka::getDev(queue), digisDevEE.const_view().size());
+        alpaka::memcpy(queue, ebDigisSizeHostBuf, ebDigisSizeDevConstView);
+        alpaka::memcpy(queue, eeDigisSizeHostBuf, eeDigisSizeDevConstView);
+        alpaka::wait(queue);
+        auto const ebDigisSize = *ebDigisSizeHostBuf.data();
+        auto const eeDigisSize = *eeDigisSizeHostBuf.data();
+        //const auto ebDigisSize = static_cast<uint32_t>(digisDevEB->metadata().size());
+        //const auto eeDigisSize = static_cast<uint32_t>(digisDevEE->metadata().size());
+
+        auto const totalChannels = ebDigisSize + eeDigisSize;
+        std::cout << "EB digi size: " << ebDigisSize << std::endl;
+        std::cout << "EE digi size: " << eeDigisSize << std::endl;
+        std::cout << "totalChannels: " << totalChannels << std::endl;
 
         EventDataForScratchGPU scratch;
         scratch.allocate(configParams, totalChannels, queue);
@@ -88,7 +105,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                             scratch.isSaturatedDevBuf.value().data());
 
         // run minimization kernels
-        v1::minimization_procedure(digisDevEB, digisDevEE, uncalibRecHitsDevEB, uncalibRecHitsDevEE, scratch, conditionsDev, configParams, queue);
+        v1::minimization_procedure(digisDevEB, digisDevEE, uncalibRecHitsDevEB, uncalibRecHitsDevEE, scratch, conditionsDev, configParams, totalChannels, queue);
 
         if (configParams.shouldRunTimingComputation) {
           //
@@ -118,9 +135,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           // therefore we need to create threads/blocks only for that
           auto const threadsFixMGPA = threads_1d;
           auto const blocksFixMGPA =
-              threadsFixMGPA > EcalDataFrame::MAXSAMPLES * static_cast<unsigned int>(digisDevEB->metadata().size()) // FIXME check if metadata.size is OK here
+              threadsFixMGPA > EcalDataFrame::MAXSAMPLES * ebDigisSize
                   ? 1
-                  : (EcalDataFrame::MAXSAMPLES * static_cast<unsigned int>(digisDevEB->metadata().size()) + threadsFixMGPA - 1) / threadsFixMGPA;
+                  : (EcalDataFrame::MAXSAMPLES * ebDigisSize + threadsFixMGPA - 1) / threadsFixMGPA;
           auto workDivTimeFixMGPAslew1D = cms::alpakatools::make_workdiv<Acc1D>(blocksFixMGPA, threadsFixMGPA);
           alpaka::exec<Acc1D>(queue,
                               workDivTimeFixMGPAslew1D,
@@ -147,11 +164,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                               scratch.sum0sNullHypotDevBuf.value().data(),
                               scratch.sumAAsNullHypotDevBuf.value().data());
 
-          unsigned int const nchannels_per_block_makeratio = 10;
-          auto const threads_makeratio = 45 * nchannels_per_block_makeratio;
-          unsigned int const blocks_makeratio = threads_makeratio > 45 * totalChannels
-                                              ? 1
-                                              : (totalChannels * 45 + threads_makeratio - 1) / threads_makeratio;
+          constexpr uint32_t nchannels_per_block_makeratio = 10;
+          constexpr auto threads_makeratio = 45 * nchannels_per_block_makeratio;
+          auto const blocks_makeratio = threads_makeratio > 45 * totalChannels
+                                      ? 1u
+                                      : (totalChannels * 45 + threads_makeratio - 1) / threads_makeratio;
           auto workDivTimeMakeRatio1D = cms::alpakatools::make_workdiv<Acc1D>(blocks_makeratio, threads_makeratio);
           alpaka::exec<Acc1D>(queue,
                               workDivTimeMakeRatio1D,
