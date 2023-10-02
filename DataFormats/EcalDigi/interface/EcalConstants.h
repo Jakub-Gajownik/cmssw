@@ -2,6 +2,8 @@
 #ifndef DataFormats_EcalDigi_EcalConstants_h
 #define DataFormats_EcalDigi_EcalConstants_h
 
+#include <array>
+
 #include "FWCore/Utilities/interface/HostDeviceConstant.h"
 
 // constants used to encode difference between corrected cc time and noncorrected cc time
@@ -12,6 +14,23 @@ namespace ecalcctiming {
   inline constexpr const float encodingOffest = 0.32;     // offsets difference in time using clock units
   inline constexpr const float encodingValue = 398.4375;  // encodes time difference into 0 - 255 int range
 }  // namespace ecalcctiming
+
+// temporary placing this here until a better place is found
+namespace ecal {
+  // due to a ROOT limitation the std::array needs to be wrapped in a struct to
+  // be able to be stored in a ROOT file
+  // https://github.com/root-project/root/issues/12007
+  template <class T, std::size_t N>
+  struct StdArrayStruct {
+    std::array<T, N> array;
+
+    T* data() { return array.data(); };
+    const T* data() const { return array.data(); };
+
+    T& operator[](size_t n) { return array[n]; };
+    const T& operator[](size_t n) const { return array[n]; };
+  };
+}  // namespace ecal
 
 // The HOST_DEVICE_CONSTANTs can not reside in the classes directly, which is
 // why they are defined in a namespace and constant pointers to them are used in the classes
@@ -30,7 +49,7 @@ class ecalPh2 {
 public:
   static constexpr double Samp_Period = 6.25;               // ADC sampling period in ns
   static constexpr unsigned int NGAINS = ecalph2::NGAINS;   // Number of CATIA gains
-  static constexpr const float *gains = ecalph2::gains;     // CATIA gain values
+  static constexpr const float* gains = ecalph2::gains;     // CATIA gain values
   static constexpr unsigned int gainId1 = 1;                // Position of gain 1 in gains array
   static constexpr unsigned int gainId10 = 0;               // Position of gain 10 in gains array
   static constexpr unsigned int sampleSize = 16;            // Number of samples per event
@@ -49,7 +68,7 @@ class ecalPh1 {
 public:
   static constexpr double Samp_Period = 25.;               // ADC sampling period in ns
   static constexpr unsigned int NGAINS = ecalph1::NGAINS;  // Number of MGPA gains including a zero gain
-  static constexpr const float *gains = ecalph1::gains;    // MGPA gain values including a zero gain
+  static constexpr const float* gains = ecalph1::gains;    // MGPA gain values including a zero gain
   static constexpr unsigned int sampleSize = 10;           // Number of samples per event
   static constexpr unsigned int NBITS = 12;                // Number of available bits
   static constexpr unsigned int kNOffsets = 2000;          // Number of time offsets generated for APD pulse shape
