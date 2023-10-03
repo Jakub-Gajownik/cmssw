@@ -86,15 +86,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
       void phase2Weights(ecal::DigiPhase2DeviceCollection const &digis,
                          ecal::UncalibratedRecHitDeviceCollection &recHits,
-                         cms::alpakatools::host_buffer<double[]> &weights_,
-                         cms::alpakatools::host_buffer<double[]> &timeWeights_,
+                         cms::alpakatools::host_buffer<double[]> &weights,
+                         cms::alpakatools::host_buffer<double[]> &timeWeights,
                          Queue  &queue)
       {
 	//create device buffers for the weights and copy the data from host to the device
-        auto weights_d = make_device_buffer<double[]>(queue,ecalPh2::sampleSize);
-        auto timeWeights_d = make_device_buffer<double[]>(queue,ecalPh2::sampleSize);
-        alpaka::memcpy(queue, weights_d, weights_);
-        alpaka::memcpy(queue, timeWeights_d, timeWeights_);
+        auto weightsDev = make_device_buffer<double[]>(queue,ecalPh2::sampleSize);
+        auto timeWeightsDev = make_device_buffer<double[]>(queue,ecalPh2::sampleSize);
+        alpaka::memcpy(queue, weightsDev, weights);
+        alpaka::memcpy(queue, timeWeightsDev, timeWeights);
 
         // use 64 items per group (arbitrary value, a reasonable starting point)
         uint32_t items = 64;
@@ -103,7 +103,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 	//create the work division
         auto workDiv = make_workdiv<Acc1D>(groups, items);
         //launch the kernel
-        alpaka::exec<Acc1D>(queue, workDiv, Phase2WeightsKernel{}, weights_d.data(), timeWeights_d.data(), digis.const_view(),recHits.view()); 
+        alpaka::exec<Acc1D>(queue, workDiv, Phase2WeightsKernel{}, weightsDev.data(), timeWeightsDev.data(), digis.const_view(),recHits.view()); 
       }
 
     }  // namespace weights
