@@ -39,10 +39,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        DigiDeviceCollection::ConstView digisDevEB,
-                                        DigiDeviceCollection::ConstView digisDevEE,
-                                        UncalibratedRecHitDeviceCollection::View uncalibRecHitsEB,
-                                        UncalibratedRecHitDeviceCollection::View uncalibRecHitsEE,
+                                        EcalDigiDeviceCollection::ConstView digisDevEB,
+                                        EcalDigiDeviceCollection::ConstView digisDevEE,
+                                        EcalUncalibratedRecHitDeviceCollection::View uncalibRecHitsEB,
+                                        EcalUncalibratedRecHitDeviceCollection::View uncalibRecHitsEE,
                                         EcalMultifitConditionsPortableDevice::ConstView conditionsDev,
                                         ::ecal::multifit::SampleVector* amplitudes,
                                         ::ecal::multifit::SampleGainVector* gainsNoise,
@@ -327,8 +327,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        DigiDeviceCollection::ConstView digisDevEB,
-                                        DigiDeviceCollection::ConstView digisDevEE,
+                                        EcalDigiDeviceCollection::ConstView digisDevEB,
+                                        EcalDigiDeviceCollection::ConstView digisDevEE,
                                         EcalMultifitConditionsPortableDevice::ConstView conditionsDev,
                                         ::ecal::multifit::SampleGainVector const* gainsNoise,
                                         ::ecal::multifit::SampleMatrix* noisecov,

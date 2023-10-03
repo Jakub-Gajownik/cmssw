@@ -14,8 +14,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
       void unpackRaw(InputDataHost const&,
                      InputDataDevice&,
-                     DigiDeviceCollection&,
-                     DigiDeviceCollection&,
+                     EcalDigiDeviceCollection&,
+                     EcalDigiDeviceCollection&,
                      EcalElectronicsMappingPortableDevice const&,
                      Queue&,
                      uint32_t const,

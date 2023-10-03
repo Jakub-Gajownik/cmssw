@@ -30,7 +30,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   
   private:
     edm::EDGetTokenT<FEDRawDataCollection> rawDataToken_;
-    using OutputProduct = ecal::DigiDeviceCollection;
+    using OutputProduct = EcalDigiDeviceCollection;
     device::EDPutToken<OutputProduct> digisDevEBToken_;
     device::EDPutToken<OutputProduct> digisDevEEToken_;
     device::ESGetToken<EcalElectronicsMappingPortableDevice, EcalMappingElectronicsRcd> eMappingToken_;

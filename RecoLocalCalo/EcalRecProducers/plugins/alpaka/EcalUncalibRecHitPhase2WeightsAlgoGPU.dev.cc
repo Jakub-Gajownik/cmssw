@@ -26,8 +26,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           ALPAKA_FN_ACC void operator()(TAcc const &acc, 
                                         double const *weightsdata,
                                         double const *timeWeightsdata,
-                                        DigiPhase2DeviceCollection::ConstView digisDev,
-                                        UncalibratedRecHitDeviceCollection::View recHitsDev
+                                        EcalDigiPhase2DeviceCollection::ConstView digisDev,
+                                        EcalUncalibratedRecHitDeviceCollection::View recHitsDev
                                         ) const;
         };
 
@@ -35,8 +35,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       ALPAKA_FN_ACC void Phase2WeightsKernel::operator()(TAcc const &acc, 
                                                         double const *weightsData,
                                                         double const *timeWeightsdata,                                                        
-                                                        DigiPhase2DeviceCollection::ConstView digisDev,
-                                                        UncalibratedRecHitDeviceCollection::View recHitsDev)  
+                                                        EcalDigiPhase2DeviceCollection::ConstView digisDev,
+                                                        EcalUncalibratedRecHitDeviceCollection::View recHitsDev)  
                                                         const{
         
         constexpr int nsamples = EcalDataFrame_Ph2::MAXSAMPLES;                                    
@@ -90,8 +90,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
 
 
-      void phase2Weights(ecal::DigiPhase2DeviceCollection const &digis,
-                         ecal::UncalibratedRecHitDeviceCollection &recHits,
+      void phase2Weights(EcalDigiPhase2DeviceCollection const &digis,
+                         EcalUncalibratedRecHitDeviceCollection &recHits,
                          cms::alpakatools::host_buffer<double[]> &weights,
                          cms::alpakatools::host_buffer<double[]> &timeWeights_,
                          Queue  &queue)

@@ -15,8 +15,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
       namespace v1 {
 
-        using InputProduct = ecal::DigiDeviceCollection;
-        using OutputProduct = ecal::UncalibratedRecHitDeviceCollection;
+        using InputProduct = EcalDigiDeviceCollection;
+        using OutputProduct = EcalUncalibratedRecHitDeviceCollection;
 
         void minimization_procedure(InputProduct const&,
                                     InputProduct const&,

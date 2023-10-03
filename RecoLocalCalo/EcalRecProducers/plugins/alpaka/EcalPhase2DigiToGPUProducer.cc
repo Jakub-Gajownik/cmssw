@@ -21,7 +21,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   private:
     const edm::EDGetTokenT<EBDigiCollectionPh2> inputDigiToken_;
-    const device::EDPutToken<ecal::DigiPhase2DeviceCollection> outputDigiDevToken_;
+    const device::EDPutToken<EcalDigiPhase2DeviceCollection> outputDigiDevToken_;
   };
 
   void EcalPhase2DigiToGPUProducer::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
@@ -45,8 +45,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     const uint32_t size = inputDigis.size();
 
     //create host and device collections of desired size
-    ecal::DigiPhase2DeviceCollection DigisDevColl{static_cast<int32_t>(size), event.queue()};
-    ecal::DigiPhase2HostCollection DigisHostColl{static_cast<int32_t>(size), event.queue()};  
+    EcalDigiPhase2DeviceCollection DigisDevColl{static_cast<int32_t>(size), event.queue()};
+    EcalDigiPhase2HostCollection DigisHostColl{static_cast<int32_t>(size), event.queue()};  
     auto DigisHostCollView = DigisHostColl.view();
 
     //iterate over digis

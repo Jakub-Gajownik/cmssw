@@ -8,8 +8,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   namespace ecal {
     namespace weights {
 
-      void phase2Weights(ecal::DigiPhase2DeviceCollection const &digis,
-                         ecal::UncalibratedRecHitDeviceCollection &recHits,
+      void phase2Weights(EcalDigiPhase2DeviceCollection const &digis,
+                         EcalUncalibratedRecHitDeviceCollection &recHits,
                          cms::alpakatools::host_buffer<double[]> &weights_,
                          cms::alpakatools::host_buffer<double[]> &timeWeights_,
                          Queue &queue);

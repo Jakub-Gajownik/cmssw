@@ -16,21 +16,19 @@ namespace ecalcctiming {
 }  // namespace ecalcctiming
 
 // temporary placing this here until a better place is found
-namespace ecal {
-  // due to a ROOT limitation the std::array needs to be wrapped in a struct to
-  // be able to be stored in a ROOT file
-  // https://github.com/root-project/root/issues/12007
-  template <class T, std::size_t N>
-  struct StdArrayStruct {
-    std::array<T, N> array;
+// due to a ROOT limitation the std::array needs to be wrapped in a struct to
+// be able to be stored in a ROOT file
+// https://github.com/root-project/root/issues/12007
+template <class T, std::size_t N>
+struct StdArrayStruct {
+  std::array<T, N> array;
 
-    T* data() { return array.data(); };
-    const T* data() const { return array.data(); };
+  T* data() { return array.data(); };
+  const T* data() const { return array.data(); };
 
-    T& operator[](size_t n) { return array[n]; };
-    const T& operator[](size_t n) const { return array[n]; };
-  };
-}  // namespace ecal
+  T& operator[](size_t n) { return array[n]; };
+  const T& operator[](size_t n) const { return array[n]; };
+};
 
 // The HOST_DEVICE_CONSTANTs can not reside in the classes directly, which is
 // why they are defined in a namespace and constant pointers to them are used in the classes

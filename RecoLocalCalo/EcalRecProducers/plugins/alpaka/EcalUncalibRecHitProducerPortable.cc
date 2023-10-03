@@ -25,10 +25,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     void produce(edm::StreamID, device::Event&, device::EventSetup const&) const override;
   
   private:
-    using InputProduct = ecal::DigiDeviceCollection;
+    using InputProduct = EcalDigiDeviceCollection;
     const device::EDGetToken<InputProduct> digisTokenEB_;
     const device::EDGetToken<InputProduct> digisTokenEE_;
-    using OutputProduct = ecal::UncalibratedRecHitDeviceCollection;
+    using OutputProduct = EcalUncalibratedRecHitDeviceCollection;
     const device::EDPutToken<OutputProduct> uncalibRecHitsTokenEB_;
     const device::EDPutToken<OutputProduct> uncalibRecHitsTokenEE_;
   

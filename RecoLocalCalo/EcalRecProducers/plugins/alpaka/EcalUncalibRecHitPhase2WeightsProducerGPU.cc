@@ -35,9 +35,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
     cms::alpakatools::host_buffer<double[]> weights_;
     cms::alpakatools::host_buffer<double[]> timeWeights_;   
    
-    using InputProduct = ecal::DigiPhase2DeviceCollection;
+    using InputProduct = EcalDigiPhase2DeviceCollection;
     const device::EDGetToken<InputProduct> digisToken_;           //assumed both will be stored on device side    
-    using OutputProduct = ecal::UncalibratedRecHitDeviceCollection; 
+    using OutputProduct = EcalUncalibratedRecHitDeviceCollection; 
     const device::EDPutToken<OutputProduct> recHitsToken_;
   };
 

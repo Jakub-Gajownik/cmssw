@@ -39,22 +39,22 @@
   <class name="edm::Wrapper<edm::DetSetVector<EcalRecHit> >"/>
   <class name="edm::Wrapper<std::vector<std::vector<edm::DetSet<EcalRecHit> > > >"/>
 
-  <class name="ecal::OotAmpArrayStruct"/>
-  <class name="ecal::EcalUncalibratedRecHitSoA"/>
-  <class name="ecal::EcalUncalibratedRecHitSoA::View"/>
+  <class name="EcalOotAmpArrayStruct"/>
+  <class name="EcalUncalibratedRecHitSoA"/>
+  <class name="EcalUncalibratedRecHitSoA::View"/>
 
-  <class name="ecal::UncalibratedRecHitHostCollection"/>
+  <class name="EcalUncalibratedRecHitHostCollection"/>
   <read
-    sourceClass="ecal::UncalibratedRecHitHostCollection"
-    targetClass="ecal::UncalibratedRecHitHostCollection"
+    sourceClass="EcalUncalibratedRecHitHostCollection"
+    targetClass="EcalUncalibratedRecHitHostCollection"
     version="[1-]"
-    source="ecal::EcalUncalibratedRecHitSoA layout_;"
-    target="buffer_"
+    source="EcalUncalibratedRecHitSoA layout_;"
+    target="buffer_,layout_,view_"
     embed="false">
   <![CDATA[
-    ecal::UncalibratedRecHitHostCollection::ROOTReadStreamer(newObj, onfile.layout_);
+    EcalUncalibratedRecHitHostCollection::ROOTReadStreamer(newObj, onfile.layout_);
   ]]>
   </read>
-  <class name="edm::Wrapper<ecal::UncalibratedRecHitHostCollection>" splitLevel="0"/>
+  <class name="edm::Wrapper<EcalUncalibratedRecHitHostCollection>" splitLevel="0"/>
 
 </lcgdict>

@@ -38,8 +38,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        DigiDeviceCollection::ConstView digisDevEB,
-                                        DigiDeviceCollection::ConstView digisDevEE,
+                                        EcalDigiDeviceCollection::ConstView digisDevEB,
+                                        EcalDigiDeviceCollection::ConstView digisDevEE,
                                         ScalarType* const sample_values,
                                         ScalarType* const sample_value_errors,
                                         bool* const useless_sample_values,
@@ -129,8 +129,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        DigiDeviceCollection::ConstView digisDevEB,
-                                        DigiDeviceCollection::ConstView digisDevEE,
+                                        EcalDigiDeviceCollection::ConstView digisDevEB,
+                                        EcalDigiDeviceCollection::ConstView digisDevEE,
                                         ScalarType* const sample_values,
                                         ScalarType* const sample_value_errors,
                                         bool* const useless_sample_values,
@@ -241,6 +241,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             ScalarType tmaxerr = 0;
             shrTimeMax[threadIdx] = 0;
             shrTimeWgt[threadIdx] = 0;
+
             bool internalCondForSkipping1 = true;
             bool internalCondForSkipping2 = true;
             if (!condForUselessSamples) {
@@ -497,8 +498,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        DigiDeviceCollection::ConstView digisDevEB,
-                                        DigiDeviceCollection::ConstView digisDevEE,
+                                        EcalDigiDeviceCollection::ConstView digisDevEB,
+                                        EcalDigiDeviceCollection::ConstView digisDevEE,
                                         ScalarType* const sample_values,
                                         ScalarType* const sample_value_errors,
                                         bool* const useless_samples,
@@ -704,8 +705,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        DigiDeviceCollection::ConstView digisDevEB,
-                                        DigiDeviceCollection::ConstView digisDevEE,
+                                        EcalDigiDeviceCollection::ConstView digisDevEB,
+                                        EcalDigiDeviceCollection::ConstView digisDevEE,
                                         EcalMultifitConditionsPortableDevice::ConstView conditionsDev,
                                         ScalarType* sample_values,
                                         ScalarType* sample_value_errors,
@@ -749,8 +750,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        DigiDeviceCollection::ConstView digisDevEB,
-                                        DigiDeviceCollection::ConstView digisDevEE,
+                                        EcalDigiDeviceCollection::ConstView digisDevEB,
+                                        EcalDigiDeviceCollection::ConstView digisDevEE,
                                         EcalMultifitConditionsPortableDevice::ConstView conditionsDev,
                                         ScalarType* sample_values,
                                         ScalarType* sample_value_errors,
@@ -930,10 +931,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         public:
           template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
           ALPAKA_FN_ACC void operator()(TAcc const& acc,
-                                        DigiDeviceCollection::ConstView digisDevEB,
-                                        DigiDeviceCollection::ConstView digisDevEE,
-                                        UncalibratedRecHitDeviceCollection::View uncalibRecHitsEB,
-                                        UncalibratedRecHitDeviceCollection::View uncalibRecHitsEE,
+                                        EcalDigiDeviceCollection::ConstView digisDevEB,
+                                        EcalDigiDeviceCollection::ConstView digisDevEE,
+                                        EcalUncalibratedRecHitDeviceCollection::View uncalibRecHitsEB,
+                                        EcalUncalibratedRecHitDeviceCollection::View uncalibRecHitsEE,
                                         EcalMultifitConditionsPortableDevice::ConstView conditionsDev,
                                         ScalarType* const g_timeMax,
                                         ScalarType* const g_timeError,

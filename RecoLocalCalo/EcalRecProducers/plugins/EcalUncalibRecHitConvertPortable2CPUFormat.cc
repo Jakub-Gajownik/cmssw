@@ -19,7 +19,7 @@ public:
   static void fillDescriptions(edm::ConfigurationDescriptions&);
 
 private:
-  using InputProduct = ecal::UncalibratedRecHitHostCollection;
+  using InputProduct = EcalUncalibratedRecHitHostCollection;
   void produce(edm::Event&, edm::EventSetup const&) override;
 
 private:

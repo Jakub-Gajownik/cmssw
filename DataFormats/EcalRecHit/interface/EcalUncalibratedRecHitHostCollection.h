@@ -4,10 +4,7 @@
 #include "DataFormats/Portable/interface/PortableHostCollection.h"
 #include "DataFormats/EcalRecHit/interface/EcalUncalibratedRecHitSoA.h"
 
-namespace ecal {
-
-  // EcalUncalibratedRecHitSoA in host memory
-  using UncalibratedRecHitHostCollection = PortableHostCollection<EcalUncalibratedRecHitSoA>;
-}
+// EcalUncalibratedRecHitSoA in host memory
+using EcalUncalibratedRecHitHostCollection = PortableHostCollection<EcalUncalibratedRecHitSoA>;
     
 #endif

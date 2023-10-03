@@ -28,7 +28,7 @@ private:
 
 private:
   // input digi collections on host in SoA format
-  using InputProduct = ecal::DigiHostCollection;
+  using InputProduct = EcalDigiHostCollection;
   edm::EDGetTokenT<InputProduct> digisInEBToken_;
   edm::EDGetTokenT<InputProduct> digisInEEToken_;
 

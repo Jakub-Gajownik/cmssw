@@ -27,8 +27,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                                         unsigned char const* __restrict__ data,
                                         uint32_t const* __restrict__ offsets,
                                         int const* __restrict__ feds,
-                                        DigiDeviceCollection::View digisDevEB,
-                                        DigiDeviceCollection::View digisDevEE,
+                                        EcalDigiDeviceCollection::View digisDevEB,
+                                        EcalDigiDeviceCollection::View digisDevEE,
                                         EcalElectronicsMappingPortableDevice::ConstView eid2did,
                                         uint32_t const nbytesTotal) const {
             // indices
@@ -384,8 +384,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
       void unpackRaw(InputDataHost const& inputHost,
                      InputDataDevice& inputDevice,
-                     DigiDeviceCollection& digisDevEB,
-                     DigiDeviceCollection& digisDevEE,
+                     EcalDigiDeviceCollection& digisDevEB,
+                     EcalDigiDeviceCollection& digisDevEE,
                      EcalElectronicsMappingPortableDevice const& mapping,
                      Queue& queue,
                      uint32_t const nfedsWithData,
