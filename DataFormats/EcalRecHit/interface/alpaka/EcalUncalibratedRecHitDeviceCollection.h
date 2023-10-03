@@ -7,15 +7,8 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
-  namespace ecal {
-
-    // make the names from the top-level ecal namespace visible for unqualified lookup
-    // inside the ALPAKA_ACCELERATOR_NAMESPACE::portabletest namespace
-    using namespace ::ecal;
-
-    // EcalUncalibratedRecHitSoA in device global memory
-    using UncalibratedRecHitDeviceCollection = PortableCollection<EcalUncalibratedRecHitSoA>;
-  }  // namespace ecal
+  // EcalUncalibratedRecHitSoA in device global memory
+  using EcalUncalibratedRecHitDeviceCollection = PortableCollection<EcalUncalibratedRecHitSoA>;
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
 

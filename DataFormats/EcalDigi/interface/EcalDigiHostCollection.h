@@ -4,10 +4,7 @@
 #include "DataFormats/Portable/interface/PortableHostCollection.h"
 #include "DataFormats/EcalDigi/interface/EcalDigiSoA.h"
 
-namespace ecal {
-
-  // EcalDigiSoA in host memory
-  using DigiHostCollection = PortableHostCollection<EcalDigiSoA>;
-}  // namespace ecal
+// EcalDigiSoA in host memory
+using EcalDigiHostCollection = PortableHostCollection<EcalDigiSoA>;
 
 #endif
