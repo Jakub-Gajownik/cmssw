@@ -24,8 +24,8 @@ private:
 
 private:
   const bool isPhase2_;
-  const edm::EDGetTokenT<InputProduct> recHitsGPUEB_;
-  const edm::EDGetTokenT<InputProduct> recHitsGPUEE_;
+  const edm::EDGetTokenT<InputProduct> uncalibRecHitsPortableEB_;
+  const edm::EDGetTokenT<InputProduct> uncalibRecHitsPortableEE_;
   const edm::EDPutTokenT<EBUncalibratedRecHitCollection> uncalibRecHitsCPUEBToken_;
   const edm::EDPutTokenT<EEUncalibratedRecHitCollection> uncalibRecHitsCPUEEToken_;
 };
@@ -33,13 +33,13 @@ private:
 void EcalUncalibRecHitConvertPortable2CPUFormat::fillDescriptions(edm::ConfigurationDescriptions &confDesc) {
   edm::ParameterSetDescription desc;
 
-  desc.add<edm::InputTag>("recHitsLabelGPUEB", edm::InputTag("ecalUncalibRecHitProducerGPU", "EcalUncalibRecHitsEB"));
+  desc.add<edm::InputTag>("recHitsLabelPortableEB", edm::InputTag("ecalUncalibRecHitProducerPortable", "EcalUncalibRecHitsEB"));
   desc.add<std::string>("recHitsLabelCPUEB", "EcalUncalibRecHitsEB");
   desc.ifValue(
       edm::ParameterDescription<bool>("isPhase2", false, true),
       false >>
               (edm::ParameterDescription<edm::InputTag>(
-                   "recHitsLabelGPUEE", edm::InputTag("ecalUncalibRecHitProducerGPU", "EcalUncalibRecHitsEE"), true) and
+                   "recHitsLabelPortableEE", edm::InputTag("ecalUncalibRecHitProducerPortable", "EcalUncalibRecHitsEE"), true) and
                edm::ParameterDescription<std::string>("recHitsLabelCPUEE", "EcalUncalibRecHitsEE", true)) or
           true >> edm::EmptyGroupDescription());
   confDesc.add("ecalUncalibRecHitConvertPortable2CPUFormat", desc);
@@ -47,56 +47,57 @@ void EcalUncalibRecHitConvertPortable2CPUFormat::fillDescriptions(edm::Configura
 
 EcalUncalibRecHitConvertPortable2CPUFormat::EcalUncalibRecHitConvertPortable2CPUFormat(edm::ParameterSet const &ps)
     : isPhase2_{ps.getParameter<bool>("isPhase2")},
-      recHitsGPUEB_{consumes<InputProduct>(ps.getParameter<edm::InputTag>("recHitsLabelGPUEB"))},
-      recHitsGPUEE_{isPhase2_ ? edm::EDGetTokenT<InputProduct>{}
-                              : consumes<InputProduct>(ps.getParameter<edm::InputTag>("recHitsLabelGPUEE"))},
+      uncalibRecHitsPortableEB_{consumes<InputProduct>(ps.getParameter<edm::InputTag>("recHitsLabelPortableEB"))},
+      uncalibRecHitsPortableEE_{isPhase2_ ? edm::EDGetTokenT<InputProduct>{}
+                              : consumes<InputProduct>(ps.getParameter<edm::InputTag>("recHitsLabelPortableEE"))},
       uncalibRecHitsCPUEBToken_{produces<EBUncalibratedRecHitCollection>(ps.getParameter<std::string>("recHitsLabelCPUEB"))},
       uncalibRecHitsCPUEEToken_{isPhase2_ ? edm::EDPutTokenT<EEUncalibratedRecHitCollection>{}
                               : produces<EEUncalibratedRecHitCollection>(ps.getParameter<std::string>("recHitsLabelCPUEE"))} {}
 
 EcalUncalibRecHitConvertPortable2CPUFormat::~EcalUncalibRecHitConvertPortable2CPUFormat() {}
 
+
 void EcalUncalibRecHitConvertPortable2CPUFormat::produce(edm::Event &event, edm::EventSetup const &setup) {
-  auto const& uncalRecHitsEBColl = event.get(recHitsGPUEB_);
+  auto const& uncalRecHitsEBColl = event.get(uncalibRecHitsPortableEB_);
   auto const& uncalRecHitsEBCollView = uncalRecHitsEBColl.const_view();
-  auto recHitsCPUEB = std::make_unique<EBUncalibratedRecHitCollection>();
-  recHitsCPUEB->reserve(uncalRecHitsEBCollView.size());
+  auto uncalibRecHitsCPUEB = std::make_unique<EBUncalibratedRecHitCollection>();
+  uncalibRecHitsCPUEB->reserve(uncalRecHitsEBCollView.size());
 
   for (uint32_t i = 0; i < uncalRecHitsEBCollView.size(); ++i) {
-    recHitsCPUEB->emplace_back(DetId{uncalRecHitsEBCollView.id()[i]},
+    uncalibRecHitsCPUEB->emplace_back(DetId{uncalRecHitsEBCollView.id()[i]},
                                uncalRecHitsEBCollView.amplitude()[i],
                                uncalRecHitsEBCollView.pedestal()[i],
                                uncalRecHitsEBCollView.jitter()[i],
                                uncalRecHitsEBCollView.chi2()[i],
                                uncalRecHitsEBCollView.flags()[i]);
     if (isPhase2_)
-      (*recHitsCPUEB)[i].setAmplitudeError(uncalRecHitsEBCollView.amplitudeError()[i]);
-    (*recHitsCPUEB)[i].setJitterError(uncalRecHitsEBCollView.jitterError()[i]);
+      (*uncalibRecHitsCPUEB)[i].setAmplitudeError(uncalRecHitsEBCollView.amplitudeError()[i]);
+    (*uncalibRecHitsCPUEB)[i].setJitterError(uncalRecHitsEBCollView.jitterError()[i]);
     for (uint32_t sample = 0; sample < EcalDataFrame::MAXSAMPLES; ++sample)
-      (*recHitsCPUEB)[i].setOutOfTimeAmplitude(sample, uncalRecHitsEBCollView.outOfTimeAmplitudes()[i][sample]);
+      (*uncalibRecHitsCPUEB)[i].setOutOfTimeAmplitude(sample, uncalRecHitsEBCollView.outOfTimeAmplitudes()[i][sample]);
   }
 
   if (!isPhase2_) {
-    auto const& uncalRecHitsEEColl = event.get(recHitsGPUEE_);
+    auto const& uncalRecHitsEEColl = event.get(uncalibRecHitsPortableEE_);
     auto const& uncalRecHitsEECollView = uncalRecHitsEEColl.const_view();
-    auto recHitsCPUEE = std::make_unique<EEUncalibratedRecHitCollection>();
-    recHitsCPUEE->reserve(uncalRecHitsEECollView.size());
+    auto uncalibRecHitsCPUEE = std::make_unique<EEUncalibratedRecHitCollection>();
+    uncalibRecHitsCPUEE->reserve(uncalRecHitsEECollView.size());
 
     for (uint32_t i = 0; i < uncalRecHitsEECollView.size(); ++i) {
-      recHitsCPUEE->emplace_back(DetId{uncalRecHitsEECollView.id()[i]},
+      uncalibRecHitsCPUEE->emplace_back(DetId{uncalRecHitsEECollView.id()[i]},
                                  uncalRecHitsEECollView.amplitude()[i],
                                  uncalRecHitsEECollView.pedestal()[i],
                                  uncalRecHitsEECollView.jitter()[i],
                                  uncalRecHitsEECollView.chi2()[i],
                                  uncalRecHitsEECollView.flags()[i]);
-      (*recHitsCPUEE)[i].setJitterError(uncalRecHitsEECollView.jitterError()[i]);
+      (*uncalibRecHitsCPUEE)[i].setJitterError(uncalRecHitsEECollView.jitterError()[i]);
       for (uint32_t sample = 0; sample < EcalDataFrame::MAXSAMPLES; ++sample) {
-        (*recHitsCPUEE)[i].setOutOfTimeAmplitude(sample, uncalRecHitsEECollView.outOfTimeAmplitudes()[i][sample]);
+        (*uncalibRecHitsCPUEE)[i].setOutOfTimeAmplitude(sample, uncalRecHitsEECollView.outOfTimeAmplitudes()[i][sample]);
       }
     }
-    event.put(uncalibRecHitsCPUEEToken_, std::move(recHitsCPUEE));
+    event.put(uncalibRecHitsCPUEEToken_, std::move(uncalibRecHitsCPUEE));
   }
-  event.put(uncalibRecHitsCPUEBToken_, std::move(recHitsCPUEB));
+  event.put(uncalibRecHitsCPUEBToken_, std::move(uncalibRecHitsCPUEB));
 }
 
 DEFINE_FWK_MODULE(EcalUncalibRecHitConvertPortable2CPUFormat);
