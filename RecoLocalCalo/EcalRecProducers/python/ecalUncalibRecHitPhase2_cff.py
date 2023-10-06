@@ -15,9 +15,9 @@ ecalUncalibRecHitPhase2Portable = _ecalUncalibRecHitPhase2Portable.clone(
 from RecoLocalCalo.EcalRecProducers.ecalUncalibRecHitConvertPortable2CPUFormat_cfi import ecalUncalibRecHitConvertPortable2CPUFormat as _ecalUncalibRecHitConvertPortable2CPUFormat
 ecalUncalibRecHitPhase2 = _ecalUncalibRecHitConvertPortable2CPUFormat.clone(
     isPhase2 = True,
-    recHitsLabelPortableEB = ('ecalUncalibRecHitPhase2Portable', 'EcalUncalibRecHitsEB'),
-    recHitsLabelPortableEE = None,  # remove unneeded Phase1 parameters
-    recHitsLabelCPUEE = None
+    uncalibratedRecHitsLabelPortableEB = ('ecalUncalibRecHitPhase2Portable', 'EcalUncalibRecHitsEB'),
+    uncalibratedRecHitsLabelPortableEE = None,  # remove unneeded Phase1 parameters
+    uncalibratedRecHitsLabelCPUEE = None
 )
 
 

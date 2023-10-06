@@ -27,7 +27,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                                         double const *weightsdata,
                                         double const *timeWeightsdata,
                                         EcalDigiPhase2DeviceCollection::ConstView digisDev,
-                                        EcalUncalibratedRecHitDeviceCollection::View recHitsDev
+                                        EcalUncalibratedRecHitDeviceCollection::View uncalibratedRecHitsDev
                                         ) const;
         };
 
@@ -36,18 +36,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                                                         double const *weightsData,
                                                         double const *timeWeightsdata,                                                        
                                                         EcalDigiPhase2DeviceCollection::ConstView digisDev,
-                                                        EcalUncalibratedRecHitDeviceCollection::View recHitsDev)  
+                                                        EcalUncalibratedRecHitDeviceCollection::View uncalibratedRecHitsDev)  
                                                         const{
         
         constexpr int nsamples = EcalDataFrame_Ph2::MAXSAMPLES;                                    
         auto const nchannels = digisDev.size();
         // one thread sets the output collection size scalar
         if (alpaka::getIdx<alpaka::Grid, alpaka::Threads>(acc)[0u] == 0) {
-          recHitsDev.size() = digisDev.size();
+          uncalibratedRecHitsDev.size() = digisDev.size();
         }
 
-        auto* amplitude = recHitsDev.amplitude();
-        auto* jitter = recHitsDev.jitter();
+        auto* amplitude = uncalibratedRecHitsDev.amplitude();
+        auto* jitter = uncalibratedRecHitsDev.jitter();
         const auto* digis = &digisDev.data()->array;
 	//calculate the first and the stride
         const auto first = alpaka::getIdx<alpaka::Block, alpaka::Threads>(acc)[0u] +
@@ -67,17 +67,17 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             jitter[tx] += (trace * *(timeWeightsdata + sample));
             if (ecalLiteDTU::gainId(digi)== 1)
               g1=true;
-            recHitsDev.outOfTimeAmplitudes()[tx].array[sample]= 0.;
+            uncalibratedRecHitsDev.outOfTimeAmplitudes()[tx].array[sample]= 0.;
           }
-          recHitsDev.amplitudeError()[tx] = 1.0f;
-          recHitsDev.id()[tx] = did.rawId();
-          recHitsDev.flags()[tx] = 0;
-          recHitsDev.pedestal()[tx] = 0.; 
-          recHitsDev.jitterError()[tx] = 0.;
-          recHitsDev.chi2()[tx] = 0.;
-          recHitsDev.aux()[tx] = 0;
+          uncalibratedRecHitsDev.amplitudeError()[tx] = 1.0f;
+          uncalibratedRecHitsDev.id()[tx] = did.rawId();
+          uncalibratedRecHitsDev.flags()[tx] = 0;
+          uncalibratedRecHitsDev.pedestal()[tx] = 0.; 
+          uncalibratedRecHitsDev.jitterError()[tx] = 0.;
+          uncalibratedRecHitsDev.chi2()[tx] = 0.;
+          uncalibratedRecHitsDev.aux()[tx] = 0;
           if (g1) {
-            recHitsDev.flags()[tx] = 0x1 << EcalUncalibratedRecHit::kHasSwitchToGain1;
+            uncalibratedRecHitsDev.flags()[tx] = 0x1 << EcalUncalibratedRecHit::kHasSwitchToGain1;
           }
         }  //if within nchannels
       }  //kernel}
@@ -85,7 +85,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
 
       void phase2Weights(EcalDigiPhase2DeviceCollection const &digis,
-                         EcalUncalibratedRecHitDeviceCollection &recHits,
+                         EcalUncalibratedRecHitDeviceCollection &uncalibratedRecHits,
                          cms::alpakatools::host_buffer<double[]> &weights,
                          cms::alpakatools::host_buffer<double[]> &timeWeights,
                          Queue  &queue)
@@ -103,7 +103,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 	//create the work division
         auto workDiv = make_workdiv<Acc1D>(groups, items);
 	//launch the kernel
-        alpaka::exec<Acc1D>(queue, workDiv, Phase2WeightsKernel{}, weightsDev.data(), timeWeightsDev.data(), digis.const_view(),recHits.view()); 
+        alpaka::exec<Acc1D>(queue, workDiv, Phase2WeightsKernel{}, weightsDev.data(), timeWeightsDev.data(), digis.const_view(),uncalibratedRecHits.view()); 
       }
 
     }  // namespace weights

@@ -38,7 +38,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
     using InputProduct = EcalDigiPhase2DeviceCollection;
     const device::EDGetToken<InputProduct> digisToken_;           //both tokens stored on the device
     using OutputProduct = EcalUncalibratedRecHitDeviceCollection; 
-    const device::EDPutToken<OutputProduct> recHitsToken_;
+    const device::EDPutToken<OutputProduct> uncalibratedRecHitsToken_;
   };
 
   // constructor with initialisation of elements
@@ -46,7 +46,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
       : weights_{cms::alpakatools::make_host_buffer<double[]>(ecalPh2::sampleSize)},
         timeWeights_{cms::alpakatools::make_host_buffer<double[]>(ecalPh2::sampleSize)},
         digisToken_{consumes(ps.getParameter<edm::InputTag>("digisLabelEB"))},
-        recHitsToken_{produces(ps.getParameter<std::string>("recHitsLabelEB"))} {
+        uncalibratedRecHitsToken_{produces(ps.getParameter<std::string>("uncalibratedRecHitsLabelEB"))} {
     //extracting the weights, for-loop to save them to the buffer even if the size is different than standard
     const auto weights = ps.getParameter<std::vector<double>>("weights");
     const auto timeWeights = ps.getParameter<std::vector<double>>("timeWeights");
@@ -67,7 +67,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
   void EcalUncalibRecHitPhase2WeightsProducerPortable::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
     edm::ParameterSetDescription desc;
   
-    desc.add<std::string>("recHitsLabelEB", "EcalUncalibRecHitsEB");
+    desc.add<std::string>("uncalibratedRecHitsLabelEB", "EcalUncalibRecHitsEB");
     //The below weights values should be kept up to date with those on the CPU version of this module
     desc.add<std::vector<double>>("weights",                 
                                   {-0.121016,
@@ -118,15 +118,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE{
     const uint32_t size = digis->metadata().size();
 
     //allocate output product on the device
-    OutputProduct recHits{static_cast<int32_t>(size), event.queue()};
+    OutputProduct uncalibratedRecHits{static_cast<int32_t>(size), event.queue()};
   
     //do not run the algo if there are no digis
     if (size > 0) {
     //launch the asynchronous work
-    ecal::weights::phase2Weights(digis, recHits, weights_, timeWeights_, event.queue());
+    ecal::weights::phase2Weights(digis, uncalibratedRecHits, weights_, timeWeights_, event.queue());
     }
     //put the output collection into the event
-    event.emplace(recHitsToken_, std::move(recHits));
+    event.emplace(uncalibratedRecHitsToken_, std::move(uncalibratedRecHits));
   }
 
 } //namespace ALPAKA_ACCELERATOR_NAMESPACE

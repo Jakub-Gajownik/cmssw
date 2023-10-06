@@ -33,26 +33,26 @@ private:
 void EcalUncalibRecHitConvertPortable2CPUFormat::fillDescriptions(edm::ConfigurationDescriptions &confDesc) {
   edm::ParameterSetDescription desc;
 
-  desc.add<edm::InputTag>("recHitsLabelPortableEB", edm::InputTag("ecalUncalibRecHitProducerPortable", "EcalUncalibRecHitsEB"));
-  desc.add<std::string>("recHitsLabelCPUEB", "EcalUncalibRecHitsEB");
+  desc.add<edm::InputTag>("uncalibratedRecHitsLabelPortableEB", edm::InputTag("ecalUncalibRecHitProducerPortable", "EcalUncalibRecHitsEB"));
+  desc.add<std::string>("uncalibratedRecHitsLabelCPUEB", "EcalUncalibRecHitsEB");
   desc.ifValue(
       edm::ParameterDescription<bool>("isPhase2", false, true),
       false >>
               (edm::ParameterDescription<edm::InputTag>(
-                   "recHitsLabelPortableEE", edm::InputTag("ecalUncalibRecHitProducerPortable", "EcalUncalibRecHitsEE"), true) and
-               edm::ParameterDescription<std::string>("recHitsLabelCPUEE", "EcalUncalibRecHitsEE", true)) or
+                   "uncalibratedRecHitsLabelPortableEE", edm::InputTag("ecalUncalibRecHitProducerPortable", "EcalUncalibRecHitsEE"), true) and
+               edm::ParameterDescription<std::string>("uncalibratedRecHitsLabelCPUEE", "EcalUncalibRecHitsEE", true)) or
           true >> edm::EmptyGroupDescription());
   confDesc.add("ecalUncalibRecHitConvertPortable2CPUFormat", desc);
 }
 
 EcalUncalibRecHitConvertPortable2CPUFormat::EcalUncalibRecHitConvertPortable2CPUFormat(edm::ParameterSet const &ps)
     : isPhase2_{ps.getParameter<bool>("isPhase2")},
-      uncalibRecHitsPortableEB_{consumes<InputProduct>(ps.getParameter<edm::InputTag>("recHitsLabelPortableEB"))},
+      uncalibRecHitsPortableEB_{consumes<InputProduct>(ps.getParameter<edm::InputTag>("uncalibratedRecHitsLabelPortableEB"))},
       uncalibRecHitsPortableEE_{isPhase2_ ? edm::EDGetTokenT<InputProduct>{}
-                              : consumes<InputProduct>(ps.getParameter<edm::InputTag>("recHitsLabelPortableEE"))},
-      uncalibRecHitsCPUEBToken_{produces<EBUncalibratedRecHitCollection>(ps.getParameter<std::string>("recHitsLabelCPUEB"))},
+                              : consumes<InputProduct>(ps.getParameter<edm::InputTag>("uncalibratedRecHitsLabelPortableEE"))},
+      uncalibRecHitsCPUEBToken_{produces<EBUncalibratedRecHitCollection>(ps.getParameter<std::string>("uncalibratedRecHitsLabelCPUEB"))},
       uncalibRecHitsCPUEEToken_{isPhase2_ ? edm::EDPutTokenT<EEUncalibratedRecHitCollection>{}
-                              : produces<EEUncalibratedRecHitCollection>(ps.getParameter<std::string>("recHitsLabelCPUEE"))} {}
+                              : produces<EEUncalibratedRecHitCollection>(ps.getParameter<std::string>("uncalibratedRecHitsLabelCPUEE"))} {}
 
 EcalUncalibRecHitConvertPortable2CPUFormat::~EcalUncalibRecHitConvertPortable2CPUFormat() {}
 
