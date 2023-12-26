@@ -9,8 +9,6 @@
 <use name="FWCore/Framework"/>
 <use name="FWCore/ParameterSet"/>
 <use name="Geometry/CaloGeometry"/>
-<use name="HeterogeneousCore/CUDACore"/>
-<use name="HeterogeneousCore/CUDAUtilities"/>
 <use name="RecoLocalCalo/EcalDeadChannelRecoveryAlgos"/>
 <use name="RecoLocalCalo/EcalRecAlgos"/>
 <use name="RecoLocalCalo/EcalRecProducers"/>
@@ -22,5 +20,15 @@
   <set name="cuda_src" value=""/>
 </iftool>
 <library file="*.cc ${cuda_src}" name="RecoLocalCaloEcalRecProducersPlugins">
+  <use name="HeterogeneousCore/CUDACore"/>
+  <use name="HeterogeneousCore/CUDAUtilities"/>
+  <flags EDM_PLUGIN="1"/>
+</library>
+
+<library file="alpaka/*.cc" name="RecoLocalCaloEcalRecProducersPluginsPortable">
+  <use name="alpaka"/>
+  <use name="HeterogeneousCore/AlpakaCore"/>
+  <use name="HeterogeneousCore/AlpakaInterface"/>
+  <flags ALPAKA_BACKENDS="1"/>
   <flags EDM_PLUGIN="1"/>
 </library>
