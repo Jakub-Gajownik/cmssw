@@ -81,8 +81,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
       void phase2Weights(EcalDigiPhase2DeviceCollection const &digis,
                          EcalUncalibratedRecHitDeviceCollection &uncalibratedRecHits,
-                         cms::alpakatools::host_buffer<double[]> &weights,
-                         cms::alpakatools::host_buffer<double[]> &timeWeights,
+                         const cms::alpakatools::host_buffer<double[]> &weights,
+                         const cms::alpakatools::host_buffer<double[]> &timeWeights,
                          Queue &queue) {
         //create device buffers for the weights and copy the data from host to the device
         auto weightsDev = make_device_buffer<double[]>(queue, ecalPh2::sampleSize);

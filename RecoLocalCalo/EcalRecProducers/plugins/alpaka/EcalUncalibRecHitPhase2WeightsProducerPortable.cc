@@ -9,7 +9,7 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/Event.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/EventSetup.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/EDPutToken.h"
-#include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/global/EDProducer.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/MakerMacros.h"
 
 #include "DataFormats/EcalDigi/interface/EcalDataFrame_Ph2.h"
@@ -22,13 +22,13 @@
 #include "EcalUncalibRecHitPhase2WeightsAlgoPortable.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
-  class EcalUncalibRecHitPhase2WeightsProducerPortable : public stream::EDProducer<> {
+  class EcalUncalibRecHitPhase2WeightsProducerPortable : public global::EDProducer<> {
   public:
     explicit EcalUncalibRecHitPhase2WeightsProducerPortable(edm::ParameterSet const &ps);
     ~EcalUncalibRecHitPhase2WeightsProducerPortable() override = default;
     static void fillDescriptions(edm::ConfigurationDescriptions &);
 
-    void produce(device::Event &, device::EventSetup const &) override;
+    void produce(edm::StreamID sid, device::Event &, device::EventSetup const &) const override;
 
   private:
     cms::alpakatools::host_buffer<double[]> weights_;
@@ -109,7 +109,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     descriptions.addWithDefaultLabel(desc);
   }
 
-  void EcalUncalibRecHitPhase2WeightsProducerPortable::produce(device::Event &event, const device::EventSetup &setup) {
+  void EcalUncalibRecHitPhase2WeightsProducerPortable::produce(edm::StreamID sid, device::Event &event, const device::EventSetup &setup) const {
     //get the device collection of digis
     auto const &digis = event.get(digisToken_);
 
