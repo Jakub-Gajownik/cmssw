@@ -32,16 +32,21 @@ private:
 void EcalUncalibRecHitSoAToLegacy::fillDescriptions(edm::ConfigurationDescriptions &confDesc) {
   edm::ParameterSetDescription desc;
 
-  desc.add<edm::InputTag>("uncalibRecHitsPortableEB",
-                          edm::InputTag("ecalMultiFitUncalibRecHitPortable", "EcalUncalibRecHitsEB"));
   desc.add<std::string>("recHitsLabelCPUEB", "EcalUncalibRecHitsEB");
   desc.ifValue(edm::ParameterDescription<bool>("isPhase2", false, true),
                false >> (edm::ParameterDescription<edm::InputTag>(
+			     "uncalibRecHitsPortableEB",
+                             edm::InputTag("ecalMultiFitUncalibRecHitPortable", "EcalUncalibRecHitsEB"),
+                             true) and
+                         edm::ParameterDescription<edm::InputTag>(
                              "uncalibRecHitsPortableEE",
                              edm::InputTag("ecalMultiFitUncalibRecHitPortable", "EcalUncalibRecHitsEE"),
                              true) and
                          edm::ParameterDescription<std::string>("recHitsLabelCPUEE", "EcalUncalibRecHitsEE", true)) or
-                   true >> edm::EmptyGroupDescription());
+	       true >> (edm::ParameterDescription<edm::InputTag>(
+                               "uncalibRecHitsPortableEB",
+                               edm::InputTag("ecalUncalibRecHitPhase2Portable", "EcalUncalibRecHitsEB"),
+                               true)));
   confDesc.add("ecalUncalibRecHitSoAToLegacy", desc);
 }
 
